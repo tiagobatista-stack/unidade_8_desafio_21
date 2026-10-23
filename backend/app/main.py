@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app import database
 from app.errors import registrar_handlers
-from app.routers import fotos, inspecoes, itens, locais
+from app.routers import fotos, inspecoes, itens, locais, painel
 from app.seed.modelo import garantir_modelo
 
 
@@ -30,6 +30,7 @@ def criar_app() -> FastAPI:
     api.include_router(inspecoes.router)
     api.include_router(itens.router)
     api.include_router(fotos.router)
+    api.include_router(painel.router)
     app.include_router(api)
     return app
 

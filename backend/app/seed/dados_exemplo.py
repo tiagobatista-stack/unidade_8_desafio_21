@@ -88,5 +88,4 @@ def carregar(db: Session) -> list[Inspecao]:
         db.add(insp)
         criadas.append(insp)
     db.flush()
-    db.commit()
     return criadas

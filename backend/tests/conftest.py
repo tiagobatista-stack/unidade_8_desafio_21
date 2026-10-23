@@ -42,4 +42,5 @@ def exemplos(db):
     from app.seed.dados_exemplo import carregar
 
     carregar(db)
+    db.commit()
     return db
