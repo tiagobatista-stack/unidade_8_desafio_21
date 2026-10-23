@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const raiz = path.resolve(__dirname, "..", "..");
@@ -333,6 +333,51 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await expect(page.getByTestId("empreendimento")).toContainText("Área de preservação");
     await expect(page.getByTestId("empreendimento")).not.toContainText("Tipo alterado depois");
     await tela(page, "copia-no-fechamento-local-editado-depois");
+  });
+
+  test("relatório: INS-004 finalizada (com fotos) numerada e imprimível; prévia da INS-005", async ({ page }) => {
+    await page.goto("/inspecoes");
+    await page.getByRole("link", { name: "INS-004", exact: true }).click();
+    await expect(page.getByTestId("numero-relatorio")).toHaveText("nº 0004/2026"); // as 3 do exemplo são 0001..0003
+    await page.getByRole("link", { name: "Gerar relatório" }).click();
+    await expect(page.getByTestId("titulo-relatorio")).toHaveText("Relatório de Vistoria nº 0004/2026");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "1. Identificação", "2. Empreendimento", "3. Objetivo e observações", "4. Checklist", "5. Registro fotográfico", "6. Conclusão",
+    ]);
+    await expect(page.getByTestId("foto-relatorio")).toHaveCount(4);
+    await expect(page.getByRole("button", { name: "Imprimir / Salvar PDF" })).toBeEnabled(); // imagens já carregadas
+    const larguras = await page.locator("figure img").evaluateAll((imgs) => imgs.map((i) => (i as HTMLImageElement).naturalWidth));
+    expect(larguras.every((w) => w > 0)).toBe(true);
+    // o relatório usa a cópia do fechamento (o Local foi editado depois, no passo anterior)
+    await expect(page.getByTestId("rel-proprietarios")).toContainText("Proprietário Fictício Quatro");
+    await expect(page.getByTestId("rel-proprietarios")).not.toContainText("Dono Novo Fictício");
+    await expect(page.getByTestId("rel-car")).toContainText("MT-5107925-00000000000000000000000000000004");
+    await expect(page.getByTestId("conclusao-resultado")).toContainText("Aprovada");
+    await expect(page.getByTestId("conclusao-regra")).toContainText("Nenhum item não conforme");
+    await expect(page.getByTestId("rodape-relatorio")).toContainText("Relatório nº 0004/2026 · INS-004 · Sistema fictício/simulado");
+    await tela(page, "relatorio-finalizado-INS-004");
+    // modo de impressão: sem menu nem botões
+    await page.emulateMedia({ media: "print" });
+    await expect(page.locator(".topo")).toBeHidden();
+    await expect(page.getByRole("button", { name: "Imprimir / Salvar PDF" })).toBeHidden();
+    await tela(page, "relatorio-finalizado-modo-impressao");
+    const pdf = path.join(raiz, "docs", "evidencias", "relatorio-INS-004.pdf");
+    await page.pdf({ path: pdf, format: "A4", preferCSSPageSize: true, printBackground: true });
+    const paginas = (readFileSync(pdf).toString("latin1").match(/\/Type\s*\/Page(?!s)/g) ?? []).length;
+    expect(paginas).toBeGreaterThanOrEqual(4); // dados + checklist, duas páginas de fotos (pares) e conclusão
+    await page.emulateMedia({ media: "screen" });
+    // prévia: inspeção aberta, sem número e com a marca
+    await page.goto("/inspecoes");
+    await page.getByRole("link", { name: "INS-005", exact: true }).click();
+    await expect(page.getByTestId("numero-relatorio")).toHaveCount(0);
+    await page.getByRole("link", { name: "Gerar relatório" }).click();
+    await expect(page.getByTestId("marca-dagua")).toHaveText("PRÉVIA, NÃO FINALIZADO");
+    await expect(page.getByTestId("titulo-relatorio")).toHaveText("Relatório de Vistoria (sem número)");
+    await expect(page.getByTestId("rel-numero")).toHaveText("— (prévia)");
+    await tela(page, "relatorio-previa-nao-finalizado");
+    await page.emulateMedia({ media: "print" });
+    await page.pdf({ path: path.join(raiz, "docs", "evidencias", "relatorio-previa-INS-005.pdf"), format: "A4", preferCSSPageSize: true, printBackground: true });
+    await page.emulateMedia({ media: "screen" });
   });
 
   test("INS-003 reprovada em somente leitura e layout estreito", async ({ page }) => {

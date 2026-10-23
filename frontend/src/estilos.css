@@ -90,3 +90,54 @@ a.indicador:hover, a.indicador:focus-visible { border-color: var(--primaria); bo
 .dados .largo { grid-column: 1 / -1; }
 .lista-simples { margin: 0; padding-left: 18px; }
 @media (max-width: 600px) { .linha-proprietario { grid-template-columns: 1fr; } }
+
+/* ---------- Relatório de vistoria (tela) ---------- */
+.relatorio-pagina { max-width: 210mm; margin: 0 auto; }
+.barra-relatorio { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.relatorio { position: relative; background: #fff; border: 1px solid var(--borda); border-radius: 4px; padding: 16mm 14mm; font-size: 10.5pt; }
+.relatorio h1 { font-size: 1.5rem; margin: 0 0 4px; }
+.relatorio h2 { font-size: 1.1rem; border-bottom: 2px solid var(--primaria); padding-bottom: 3px; margin: 22px 0 10px; }
+.relatorio h3 { font-size: .95rem; margin: 10px 0 2px; color: var(--suave); }
+.relatorio section { margin-bottom: 8px; }
+.dados-relatorio { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 18px; margin: 0; }
+.dados-relatorio dt { font-size: .75rem; color: var(--suave); }
+.dados-relatorio dd { margin: 0; overflow-wrap: anywhere; }
+.dados-relatorio .largo { grid-column: 1 / -1; }
+.tabela-relatorio { width: 100%; border-collapse: collapse; font-size: .92em; }
+.tabela-relatorio th, .tabela-relatorio td { border: 1px solid #b8c0c8; padding: 5px 7px; vertical-align: top; white-space: normal; }
+.tabela-relatorio th { background: #eef1f4; text-align: left; }
+.linha-critica td { background: #fde8e6; }
+.selo-critico-nc { color: #8a1c14; }
+.totais-relatorio { margin: 8px 0 0; font-weight: 600; }
+.par-fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.foto-relatorio { margin: 0; border: 1px solid #b8c0c8; border-radius: 4px; padding: 8px; }
+.foto-relatorio img { display: block; width: 100%; max-height: 84mm; object-fit: contain; background: #f4f6f8; }
+.foto-relatorio figcaption p { margin: 4px 0 0; }
+.faixa-previa { background: #fdecea; border: 2px solid var(--perigo); color: #7a1a12; font-weight: 700; text-align: center; padding: 8px; margin-bottom: 12px; }
+.marca-dagua { position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%) rotate(-28deg); font-size: 54px; font-weight: 800; color: rgba(180, 35, 24, .14); white-space: nowrap; pointer-events: none; z-index: 3; letter-spacing: 2px; }
+.rodape-relatorio { margin-top: 24px; padding-top: 6px; border-top: 1px solid #999; font-size: 9pt; color: #444; }
+
+/* ---------- Impressão: A4, sem menu nem botões, rodapé em todas as páginas ---------- */
+@page {
+  size: A4;
+  margin: 16mm 14mm 22mm 14mm;
+  @bottom-right { content: "Página " counter(page) " de " counter(pages); font-size: 9pt; color: #444; }
+}
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; }
+  .topo, .nao-imprimir { display: none !important; }
+  main { max-width: none; padding: 0; margin: 0; }
+  .relatorio-pagina { max-width: none; }
+  .relatorio { border: 0; border-radius: 0; padding: 0; font-size: 10pt; }
+  .rodape-relatorio { display: none; } /* impresso pela caixa de margem do @page (ver regraDePagina) */
+  .bloco-checklist { break-inside: avoid; page-break-inside: avoid; }
+  .relatorio h2, .relatorio h3 { break-after: avoid; page-break-after: avoid; }
+  .tabela-relatorio tr { break-inside: avoid; page-break-inside: avoid; }
+  .tabela-relatorio thead { display: table-header-group; }
+  .par-fotos { break-inside: avoid; page-break-inside: avoid; grid-template-columns: 1fr; margin-bottom: 0; }
+  .par-fotos + .par-fotos { break-before: page; page-break-before: always; } /* no máximo 2 fotos por página */
+  .foto-relatorio { break-inside: avoid; page-break-inside: avoid; margin-bottom: 8mm; }
+  .foto-relatorio img { max-height: 90mm; }
+  .relatorio section:last-of-type { break-before: auto; }
+}

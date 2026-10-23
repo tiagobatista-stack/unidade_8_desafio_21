@@ -69,9 +69,12 @@ def _garantir_colunas(engine: Engine) -> None:
     insp = inspect(engine)
     tabelas = set(insp.get_table_names())
     novas = {  # tabela -> [(coluna, definição)]
-        "inspecao": [("numero_processo", "VARCHAR(60)"), ("empreendimento_json", "TEXT")],
+        "inspecao": [("numero_processo", "VARCHAR(60)"), ("empreendimento_json", "TEXT"), ("numero_relatorio", "VARCHAR(20)")],
         "local": [("numero_car", "VARCHAR(60)")],
     }
+    indices = [  # SQLite não aceita UNIQUE em ADD COLUMN: o índice único é criado à parte
+        ("inspecao", "CREATE UNIQUE INDEX IF NOT EXISTS ux_inspecao_numero_relatorio ON inspecao (numero_relatorio)"),
+    ]
     for tabela, colunas_novas in novas.items():
         if tabela not in tabelas:
             continue  # tabela nova: o create_all já a cria completa
@@ -80,6 +83,10 @@ def _garantir_colunas(engine: Engine) -> None:
             if coluna not in existentes:
                 with engine.begin() as con:
                     con.execute(text(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {definicao}"))
+    for tabela, ddl in indices:
+        if tabela in tabelas:
+            with engine.begin() as con:
+                con.execute(text(ddl))
 
 
 def criar_tabelas() -> None:

@@ -40,7 +40,7 @@ def test_preenche_a_copia_das_finalizadas_antigas_com_o_local_atual(db):
     db.commit()
     assert antiga.empreendimento_json is None
 
-    assert preencher_legado(db) == {"copias": 1}
+    assert preencher_legado(db)["copias"] == 1
     db.expire_all()
     assert '"Dono Legado Fictício"' in db.get(Inspecao, antiga.id).empreendimento_json
     assert db.get(Inspecao, andamento.id).empreendimento_json is None  # só finalizadas
@@ -51,8 +51,8 @@ def test_nao_sobrescreve_copia_existente_e_e_idempotente(db):
     local = _local(db)
     existente = _finalizada(db, local, "INS-001", empreendimento_json='{"nome": "Copia Original Fictícia"}')
     db.commit()
-    assert preencher_legado(db) == {"copias": 0}
-    assert preencher_legado(db) == {"copias": 0}
+    assert preencher_legado(db)["copias"] == 0
+    assert preencher_legado(db)["copias"] == 0
     db.expire_all()
     assert db.get(Inspecao, existente.id).empreendimento_json == '{"nome": "Copia Original Fictícia"}'
 
@@ -93,4 +93,69 @@ def test_banco_antigo_sem_a_coluna_recebe_coluna_e_copia_na_subida(tmp_path, mon
         assert d["empreendimento"]["proprietarios"] == []
         c.put("/api/v1/locais/1", json={"nome": "Nome Novo Fictício", "municipio": "M", "tipo": "T", "latitude": -12.5, "longitude": -55.5})
         assert c.get("/api/v1/inspecoes/1").json()["empreendimento"]["nome"] == "Local Antigo Fictício"  # cópia preservada
+    engine.dispose()
+
+
+# ---------- C3: numeração do legado ----------
+def _finalizada_em(db, local, codigo, fechado):
+    return _insp(db, local, codigo, "FINALIZADA", resultado="APROVADA", fechado_em=fechado,
+                 data_realizacao=date(2026, 10, 21))
+
+
+def test_numera_as_finalizadas_antigas_na_ordem_do_fechamento_e_por_ano(db):
+    local = _local(db)
+    # criadas fora de ordem de propósito: o número segue o fechamento, não o id
+    tarde_2026 = _finalizada_em(db, local, "INS-001", datetime(2026, 10, 20, 9, 0))
+    cedo_2026 = _finalizada_em(db, local, "INS-002", datetime(2026, 3, 1, 9, 0))
+    ano_2025 = _finalizada_em(db, local, "INS-003", datetime(2025, 12, 31, 23, 0))
+    sem_fechar = _insp(db, local, "INS-004", "EM_ANDAMENTO")
+    db.commit()
+
+    r = preencher_legado(db)
+    db.expire_all()
+    numeros = {i.codigo: i.numero_relatorio for i in db.query(Inspecao)}
+    assert r["numeros"] == 3
+    assert numeros == {"INS-003": "0001/2025", "INS-002": "0001/2026", "INS-001": "0002/2026", "INS-004": None}
+    assert db.get(Inspecao, sem_fechar.id).numero_relatorio is None
+    assert (tarde_2026.id, cedo_2026.id, ano_2025.id)  # (apenas para deixar claro quais foram criadas)
+
+
+def test_numeracao_do_legado_e_idempotente_e_nao_renumera(db):
+    local = _local(db)
+    _finalizada_em(db, local, "INS-001", datetime(2026, 10, 20, 9, 0))
+    db.commit()
+    assert preencher_legado(db)["numeros"] == 1
+    assert preencher_legado(db)["numeros"] == 0
+    db.expire_all()
+    assert db.query(Inspecao).one().numero_relatorio == "0001/2026"
+
+
+def test_novos_fechamentos_continuam_a_sequencia_do_legado(db):
+    from app.services.numeracao_service import atribuir_numero
+
+    local = _local(db)
+    _finalizada_em(db, local, "INS-001", datetime(2026, 10, 20, 9, 0))
+    nova = _insp(db, local, "INS-002", "EM_ANDAMENTO")
+    db.commit()
+    preencher_legado(db)
+    assert atribuir_numero(db, nova, 2026) == "0002/2026"
+
+
+def test_banco_antigo_ganha_coluna_e_indice_unico_do_numero(tmp_path):
+    from sqlalchemy import inspect
+
+    from app import database
+    from tests.unit.test_migracao import ESQUEMA_ANTIGO
+
+    engine = database.criar_engine(f"sqlite:///{(tmp_path / 'sem_numero.db').as_posix()}")
+    with engine.begin() as con:
+        con.execute(text(ESQUEMA_ANTIGO))
+    database.configurar(engine)
+    database.criar_tabelas()
+    database.criar_tabelas()  # idempotente
+    insp = inspect(engine)
+    assert {"numero_relatorio", "empreendimento_json", "numero_processo"} <= {c["name"] for c in insp.get_columns("inspecao")}
+    indices = {i["name"]: i for i in insp.get_indexes("inspecao")}
+    assert indices["ux_inspecao_numero_relatorio"]["unique"] in (1, True)
+    assert "contador_relatorio" in insp.get_table_names()
     engine.dispose()

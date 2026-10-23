@@ -37,6 +37,7 @@ class Inspecao(Base):
         Index("ix_inspecao_status", "status"),
         Index("ix_inspecao_data_agendamento", "data_agendamento"),
         Index("ix_inspecao_local_id", "local_id"),
+        Index("ux_inspecao_numero_relatorio", "numero_relatorio", unique=True),
         {"sqlite_autoincrement": True},
     )
 
@@ -46,6 +47,8 @@ class Inspecao(Base):
     numero_processo: Mapped[str | None] = mapped_column(String(60))
     # Cópia (JSON) dos dados do empreendimento gravada no fechamento; o relatório da finalizada usa esta cópia.
     empreendimento_json: Mapped[str | None] = mapped_column(Text)
+    # 'NNNN/AAAA', atribuído no fechamento; único e nunca reutilizado (nulo enquanto não finalizada)
+    numero_relatorio: Mapped[str | None] = mapped_column(String(20))
     local_id: Mapped[int] = mapped_column(ForeignKey("local.id"), nullable=False)
     objetivo: Mapped[str] = mapped_column(String(200), nullable=False)
     observacoes: Mapped[str | None] = mapped_column(Text)

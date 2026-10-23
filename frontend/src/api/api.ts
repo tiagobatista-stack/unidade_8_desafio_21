@@ -8,6 +8,7 @@ import type {
   Item,
   Local,
   NovoLocal,
+  Relatorio,
   Pagina,
   Situacao,
 } from "./tipos";
@@ -31,6 +32,7 @@ export const api = {
   atualizarLocal: (id: number, dados: NovoLocal) => requisicao<Local>(`/locais/${id}`, json("PUT", dados)),
   inspecoes: (f: FiltrosLista) => requisicao<Pagina<InspecaoResumo>>(`/inspecoes${qs({ ...f, tamanho: 100 })}`),
   inspecao: (id: number) => requisicao<InspecaoDetalhe>(`/inspecoes/${id}`),
+  relatorio: (id: number) => requisicao<Relatorio>(`/inspecoes/${id}/relatorio`),
   criarInspecao: (dados: { numero_processo: string; local_id: number; data_agendamento: string; objetivo: string; observacoes?: string }) =>
     requisicao<InspecaoDetalhe>("/inspecoes", json("POST", dados)),
   editarInspecao: (id: number, dados: Record<string, unknown>) =>

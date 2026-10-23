@@ -63,6 +63,9 @@ export default function InspecaoDetalhePage() {
       )}
 
       <dl className="dados">
+        {insp.numero_relatorio && (
+          <div><dt>Relatório de vistoria</dt><dd data-testid="numero-relatorio">nº {insp.numero_relatorio}</dd></div>
+        )}
         <div><dt>Processo</dt><dd data-testid="numero-processo">{insp.numero_processo ?? "—"}</dd></div>
         <div><dt>Data de agendamento (planejada)</dt><dd>{formatarData(insp.data_agendamento)}</dd></div>
         <div><dt>Data de realização (vistoria em campo)</dt><dd>{formatarData(insp.data_realizacao)}</dd></div>
@@ -107,22 +110,26 @@ export default function InspecaoDetalhePage() {
 
       <MensagemErro erro={erroAcao} />
 
-      {!leitura && (
-        <div className="acoes">
-          {insp.campos_editaveis.length > 0 && (
-            <Link className="botao secundario" to={`/inspecoes/${id}/editar`}>Editar inspeção</Link>
-          )}
-          <button
-            type="button"
-            disabled={Boolean(insp.fechamento_bloqueado_motivo)}
-            aria-describedby={insp.fechamento_bloqueado_motivo ? "motivo-fechar" : undefined}
-            onClick={() => { setErroAcao(null); setModal("fechar"); }}
-          >
-            Fechar inspeção
-          </button>
-          <button type="button" className="perigo" onClick={() => { setErroAcao(null); setModal("cancelar"); }}>Cancelar inspeção</button>
-        </div>
-      )}
+      <div className="acoes">
+        {/* O relatório existe em qualquer status: prévia antes do fechamento, documento numerado depois */}
+        <Link className="botao secundario" to={`/inspecoes/${id}/relatorio`}>Gerar relatório</Link>
+        {!leitura && insp.campos_editaveis.length > 0 && (
+          <Link className="botao secundario" to={`/inspecoes/${id}/editar`}>Editar inspeção</Link>
+        )}
+        {!leitura && (
+          <>
+            <button
+              type="button"
+              disabled={Boolean(insp.fechamento_bloqueado_motivo)}
+              aria-describedby={insp.fechamento_bloqueado_motivo ? "motivo-fechar" : undefined}
+              onClick={() => { setErroAcao(null); setModal("fechar"); }}
+            >
+              Fechar inspeção
+            </button>
+            <button type="button" className="perigo" onClick={() => { setErroAcao(null); setModal("cancelar"); }}>Cancelar inspeção</button>
+          </>
+        )}
+      </div>
       {!leitura && insp.fechamento_bloqueado_motivo && (
         <p id="motivo-fechar" className="dica" data-testid="motivo-fechar">{insp.fechamento_bloqueado_motivo}</p>
       )}

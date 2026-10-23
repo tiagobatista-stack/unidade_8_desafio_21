@@ -87,6 +87,7 @@ export interface InspecaoDetalhe {
   codigo: string;
   numero_processo: string | null;
   empreendimento: Empreendimento;
+  numero_relatorio: string | null;
   campos_editaveis: string[];
   fechamento_bloqueado_motivo: string | null;
   registro_bloqueado_motivo: string | null;
@@ -127,4 +128,48 @@ export interface FiltrosLista {
   numero_processo?: string;
   data_inicio?: string;
   data_fim?: string;
+}
+
+export interface ItemRelatorio {
+  numero: number;
+  descricao: string;
+  critico: boolean;
+  situacao: Situacao;
+  observacao: string | null;
+  critico_nao_conforme: boolean;
+}
+
+export interface FotoRelatorio {
+  numero: number;
+  url_original: string;
+  nome_original: string;
+  legenda: string | null;
+  anotacao: string;
+  item_numero: number | null;
+  item_descricao: string | null;
+  data_captura: string | null;
+}
+
+export interface Relatorio {
+  previa: boolean;
+  marca_dagua: string | null;
+  numero_relatorio: string | null;
+  titulo: string;
+  identificacao: {
+    codigo: string;
+    numero_processo: string | null;
+    status: Status;
+    resultado: string | null;
+    data_agendamento: string;
+    data_realizacao: string | null;
+    fechado_em: string | null;
+  };
+  empreendimento: Empreendimento;
+  objetivo: { objetivo: string; observacoes: string | null; observacoes_vistoria: string | null };
+  checklist: {
+    itens: ItemRelatorio[];
+    totais: { total: number; respondidos: number; conformes: number; nao_conformes: number; nao_aplicaveis: number; nao_respondidos: number };
+  };
+  fotos: FotoRelatorio[];
+  conclusao: { resultado: string | null; regra: string };
 }

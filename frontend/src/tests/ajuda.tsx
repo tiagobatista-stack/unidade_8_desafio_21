@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import App from "../App";
-import type { InspecaoDetalhe, InspecaoResumo, Item, Foto, Local } from "../api/tipos";
+import type { InspecaoDetalhe, InspecaoResumo, Item, Foto, Local, Relatorio } from "../api/tipos";
 
 export interface Chamada {
   metodo: string;
@@ -105,7 +105,8 @@ export function inspecao(parcial: Partial<InspecaoDetalhe> = {}): InspecaoDetalh
     id: 4, codigo: "INS-004", numero_processo: "SEMA-PRO-2026/12345", campos_editaveis: EDITAVEIS[parcial.status ?? "ABERTA"],
     // como a API: só em ABERTA há motivo para não fechar; o aviso de agendamento futuro vem de cada teste
     fechamento_bloqueado_motivo: (parcial.status ?? "ABERTA") === "ABERTA" ? MSG_NAO_INICIADA : null,
-    registro_bloqueado_motivo: null, empreendimento: empreendimentoDe(parcial.local ?? local), local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
+    registro_bloqueado_motivo: null, empreendimento: empreendimentoDe(parcial.local ?? local),
+    numero_relatorio: (parcial.status ?? "ABERTA") === "FINALIZADA" ? "0001/2026" : null, local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
     data_agendamento: "2026-10-20", data_realizacao: null, status: "ABERTA", resultado: null, motivo_cancelamento: null,
     fechado_em: null, itens, fotos: [],
     resumo_itens: { total: itens.length, respondidos: itens.filter((i) => i.situacao !== "NAO_RESPONDIDO").length, nao_conformes: itens.filter((i) => i.situacao === "NAO_CONFORME").length },
@@ -121,3 +122,39 @@ export function resumo(id: number, parcial: Partial<InspecaoResumo> = {}): Inspe
 }
 
 export const pagina = <T,>(dados: T[]) => ({ corpo: { dados, total: dados.length, pagina: 1, tamanho: 100 } });
+
+/** Relatório de uma inspeção finalizada, como a API devolve; cada teste sobrescreve o que precisa. */
+export function relatorio(parcial: Partial<Relatorio> = {}): Relatorio {
+  return {
+    previa: false, marca_dagua: null, numero_relatorio: "0004/2026", titulo: "Relatório de Vistoria nº 0004/2026",
+    identificacao: {
+      codigo: "INS-004", numero_processo: "SEMA-PRO-2026/12345", status: "FINALIZADA", resultado: "REPROVADA",
+      data_agendamento: "2026-10-20", data_realizacao: "2026-10-21", fechado_em: "2026-10-23T17:05:00",
+    },
+    empreendimento: {
+      nome: "Fazenda Horizonte Azul", municipio: "Vila Nova do Cerrado", tipo: "Propriedade rural", latitude: -10.42318,
+      longitude: -58.71264, numero_car: "MT-5107925-00000000000000000000000000000001",
+      proprietarios: [{ nome: "Proprietário Fictício Um", telefone: "65900000001", telefone_formatado: "(65) 90000-0001" }],
+    },
+    objetivo: { objetivo: "Vistoria de rotina", observacoes: "Observação geral", observacoes_vistoria: "Texto da vistoria" },
+    checklist: {
+      itens: [
+        { numero: 1, descricao: "Licença ambiental", critico: true, situacao: "CONFORME", observacao: null, critico_nao_conforme: false },
+        { numero: 2, descricao: "Destinação de efluentes", critico: true, situacao: "NAO_CONFORME", observacao: "Transbordando", critico_nao_conforme: true },
+        { numero: 3, descricao: "Sinalização", critico: false, situacao: "NAO_CONFORME", observacao: "Placa gasta", critico_nao_conforme: false },
+        { numero: 4, descricao: "Resíduos", critico: false, situacao: "NAO_SE_APLICA", observacao: null, critico_nao_conforme: false },
+      ],
+      totais: { total: 4, respondidos: 4, conformes: 1, nao_conformes: 2, nao_aplicaveis: 1, nao_respondidos: 0 },
+    },
+    fotos: [
+      { numero: 1, url_original: "/api/v1/inspecoes/4/fotos/1/arquivo?versao=original", nome_original: "a.jpg", legenda: "Caixa separadora",
+        anotacao: "Transbordamento junto à base.", item_numero: 2, item_descricao: "Destinação de efluentes", data_captura: "2026-10-21T09:30:00" },
+      { numero: 2, url_original: "/api/v1/inspecoes/4/fotos/2/arquivo?versao=original", nome_original: "b.jpg", legenda: null,
+        anotacao: "Vista geral.", item_numero: null, item_descricao: null, data_captura: null },
+      { numero: 3, url_original: "/api/v1/inspecoes/4/fotos/3/arquivo?versao=original", nome_original: "c.jpg", legenda: null,
+        anotacao: "Terceira foto.", item_numero: null, item_descricao: null, data_captura: null },
+    ],
+    conclusao: { resultado: "REPROVADA", regra: "1 item crítico não conforme" },
+    ...parcial,
+  };
+}

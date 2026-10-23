@@ -6,6 +6,7 @@ import LocaisPage from "./pages/LocaisPage";
 import LocalFormPage from "./pages/LocalFormPage";
 import NovaInspecaoPage from "./pages/NovaInspecaoPage";
 import PainelPage from "./pages/PainelPage";
+import RelatorioPage from "./pages/RelatorioPage";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/inspecoes/nova" element={<NovaInspecaoPage />} />
           <Route path="/inspecoes/:id" element={<InspecaoDetalhePage />} />
           <Route path="/inspecoes/:id/editar" element={<EditarInspecaoPage />} />
+          <Route path="/inspecoes/:id/relatorio" element={<RelatorioPage />} />
           <Route path="/locais" element={<LocaisPage />} />
           <Route path="/locais/novo" element={<LocalFormPage />} />
           <Route path="/locais/:id/editar" element={<LocalFormPage />} />

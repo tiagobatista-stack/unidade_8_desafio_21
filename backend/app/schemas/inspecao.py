@@ -109,6 +109,7 @@ class InspecaoDetalhe(BaseModel):
     atualizado_em: datetime
     fechado_em: datetime | None
     empreendimento: EmpreendimentoOut
+    numero_relatorio: str | None
     campos_editaveis: list[str]
     fechamento_bloqueado_motivo: str | None
     registro_bloqueado_motivo: str | None

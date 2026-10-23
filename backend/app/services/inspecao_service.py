@@ -23,7 +23,7 @@ from app.errors import ErroNegocio, erro_campo
 from app.models import Inspecao, ItemInspecao
 from app.repositories import inspecao_repository as repo
 from app.repositories import local_repository
-from app.services import empreendimento_service
+from app.services import empreendimento_service, numeracao_service
 from app.schemas.inspecao import InspecaoIn, InspecaoPatch
 
 # RN14: campos editáveis por status
@@ -65,6 +65,7 @@ def detalhe(inspecao: Inspecao) -> dict:
         **{c.key: getattr(inspecao, c.key) for c in Inspecao.__table__.columns},
         "local": inspecao.local, "itens": itens, "fotos": [foto_dict(f) for f in inspecao.fotos],
         "empreendimento": empreendimento_service.da_inspecao(inspecao),
+        "numero_relatorio": inspecao.numero_relatorio if inspecao.status == Status.FINALIZADA else None,
         "campos_editaveis": sorted(CAMPOS_EDITAVEIS.get(inspecao.status, set())),
         "fechamento_bloqueado_motivo": motivo_fechamento_bloqueado(inspecao.status),
         "registro_bloqueado_motivo": motivo_registro_bloqueado(inspecao.status, inspecao.data_agendamento, clock.hoje()),
@@ -195,8 +196,11 @@ def fechar(db: Session, inspecao_id: int) -> Inspecao:
             "FECHAMENTO_BLOQUEADO", "Há itens pendentes que impedem o fechamento.", 422, detalhes
         )
     agora = clock.agora()
-    inspecao.resultado = calcular_resultado(inspecao.itens)  # RN06
+    # Cópia e número primeiro: a reserva do número consulta o banco (autoflush) e a inspeção ainda não pode
+    # estar pela metade (resultado sem status FINALIZADA violaria o CHECK). Tudo vai no mesmo commit.
     empreendimento_service.copiar_no_fechamento(inspecao)  # C2: o relatório não muda se o Local for editado depois
+    numeracao_service.atribuir_numero(db, inspecao, clock.hoje().year)  # C3: número NNNN/AAAA, nunca reutilizado
+    inspecao.resultado = calcular_resultado(inspecao.itens)  # RN06
     inspecao.status = Status.FINALIZADA
     inspecao.fechado_em = agora
     inspecao.atualizado_em = agora
