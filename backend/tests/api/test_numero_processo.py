@@ -65,9 +65,9 @@ def detalhe(api, codigo):
 @pytest.mark.parametrize(
     "codigo,esperado",
     [
-        ("INS-005", ["data_agendamento", "local_id", "numero_processo", "objetivo", "observacoes", "observacoes_vistoria"]),
-        ("INS-004", ["data_realizacao", "numero_processo", "observacoes", "observacoes_vistoria"]),
-        ("INS-001", []),
+        ("INS-005", sorted(["data_agendamento", "local_id", "numero_processo", "objetivo", "observacoes", "observacoes_vistoria", "assunto_outro", "assunto_tipo", "atos", "equipe", "interessado_comarca", "interessado_orgao", "interessado_requerente", "interessado_unidade", "numero_relatorio_sema", "providencias_texto"])),
+        ("INS-004", sorted(["data_realizacao", "numero_processo", "observacoes", "observacoes_vistoria", "assunto_outro", "assunto_tipo", "atos", "equipe", "interessado_comarca", "interessado_orgao", "interessado_requerente", "interessado_unidade", "numero_relatorio_sema", "providencias_texto"])),
+        ("INS-001", ["atos", "numero_relatorio_sema"]),  # R4: só o que a SEMA atribui depois
     ],
 )
 def test_campos_editaveis_vem_da_api_por_status(api, codigo, esperado):

@@ -1,6 +1,13 @@
 from sqlalchemy.orm import Session
 
-from app.domain.constantes import MAX_MUNICIPIO, MAX_NOME_LOCAL, MAX_TIPO_LOCAL
+from app.domain.constantes import (
+    MAX_ENDERECO_CAMPO,
+    MAX_LOGRADOURO,
+    MAX_MUNICIPIO,
+    MAX_NOME_LOCAL,
+    MAX_NUMERO_ENDERECO,
+    MAX_TIPO_LOCAL,
+)
 from app.domain.contato import (
     MAX_NOME_PROPRIETARIO,
     MAX_PROPRIETARIOS,
@@ -8,6 +15,7 @@ from app.domain.contato import (
     normalizar_telefone,
 )
 from app.domain.coordenadas import validar_coordenadas
+from app.domain.documento import normalizar_cep, normalizar_cpf_cnpj, normalizar_uf
 from app.domain.texto import sanear
 from app.errors import ErroNegocio, erro_campo
 from app.models import Local, Proprietario
@@ -26,23 +34,46 @@ def obter(db: Session, local_id: int) -> Local:
     return local
 
 
-def _validar_proprietarios(dados: LocalIn) -> list[dict]:
-    """Nome obrigatório (≤120) e telefone opcional (10/11 dígitos); aponta o erro de cada linha."""
+def _tentar(detalhes: list[dict], funcao, *args, **kwargs):
+    """Executa a validação e acumula o erro (em vez de interromper) para apontar todos os campos de uma vez."""
+    try:
+        return funcao(*args, **kwargs)
+    except ErroNegocio as e:
+        detalhes += e.detalhes
+        return None
+
+
+def _validar_proprietarios(dados: LocalIn, endereco: dict) -> list[dict]:
+    """Nome obrigatório (até 120), telefone (10/11 dígitos), CPF/CNPJ com verificadores e endereço para
+    correspondência; aponta o erro de cada linha. `endereco` é o do empreendimento (atalho 'mesmo endereço')."""
     if len(dados.proprietarios) > MAX_PROPRIETARIOS:
         raise erro_campo("proprietarios", f"Máximo de {MAX_PROPRIETARIOS} proprietários.")
     saida: list[dict] = []
     detalhes: list[dict] = []
     for i, p in enumerate(dados.proprietarios):
-        nome = telefone = None
-        try:
-            nome = sanear(p.nome, f"proprietarios.{i}.nome", MAX_NOME_PROPRIETARIO, obrigatorio=True)
-        except ErroNegocio as e:
-            detalhes += e.detalhes
-        try:
-            telefone = normalizar_telefone(p.telefone, f"proprietarios.{i}.telefone")
-        except ErroNegocio as e:
-            detalhes += e.detalhes
-        saida.append({"nome": nome, "telefone": telefone, "ordem": i})
+        c = f"proprietarios.{i}."
+        item = {
+            "nome": _tentar(detalhes, sanear, p.nome, c + "nome", MAX_NOME_PROPRIETARIO, obrigatorio=True),
+            "telefone": _tentar(detalhes, normalizar_telefone, p.telefone, c + "telefone"),
+            "cpf_cnpj": _tentar(detalhes, normalizar_cpf_cnpj, p.cpf_cnpj, c + "cpf_cnpj"),
+            "corr_numero": _tentar(detalhes, sanear, p.corr_numero, c + "corr_numero", MAX_NUMERO_ENDERECO),
+            "corr_complemento": _tentar(detalhes, sanear, p.corr_complemento, c + "corr_complemento", MAX_ENDERECO_CAMPO),
+            "corr_bairro": _tentar(detalhes, sanear, p.corr_bairro, c + "corr_bairro", MAX_ENDERECO_CAMPO),
+            "ordem": i,
+        }
+        if p.correspondencia_mesmo_endereco:
+            item.update(
+                corr_logradouro=endereco["logradouro"], corr_municipio=endereco["municipio"],
+                corr_uf=endereco["uf"], corr_cep=endereco["cep"],
+            )
+        else:
+            item.update(
+                corr_logradouro=_tentar(detalhes, sanear, p.corr_logradouro, c + "corr_logradouro", MAX_LOGRADOURO),
+                corr_municipio=_tentar(detalhes, sanear, p.corr_municipio, c + "corr_municipio", MAX_MUNICIPIO),
+                corr_uf=_tentar(detalhes, normalizar_uf, p.corr_uf, c + "corr_uf", padrao=None),
+                corr_cep=_tentar(detalhes, normalizar_cep, p.corr_cep, c + "corr_cep"),
+            )
+        saida.append(item)
     if detalhes:
         raise ErroNegocio("VALIDACAO_CAMPO", "Dados inválidos.", 422, detalhes)
     return saida
@@ -54,18 +85,26 @@ def _validar(db: Session, dados: LocalIn, ignorar_id: int | None = None) -> dict
     tipo = sanear(dados.tipo, "tipo", MAX_TIPO_LOCAL, obrigatorio=True)
     validar_coordenadas(dados.latitude, dados.longitude)
     numero_car = normalizar_car(dados.numero_car)
-    proprietarios = _validar_proprietarios(dados)
+    erros_endereco: list[dict] = []
+    logradouro = _tentar(erros_endereco, sanear, dados.logradouro, "logradouro", MAX_LOGRADOURO)
+    uf = _tentar(erros_endereco, normalizar_uf, dados.uf)  # padrão MT
+    cep = _tentar(erros_endereco, normalizar_cep, dados.cep)
+    if erros_endereco:
+        raise ErroNegocio("VALIDACAO_CAMPO", "Dados inválidos.", 422, erros_endereco)
+    endereco = {"logradouro": logradouro, "municipio": municipio, "uf": uf, "cep": cep}
+    proprietarios = _validar_proprietarios(dados, endereco)
     existente = repo.obter_por_nome(db, nome)
     if existente and existente.id != ignorar_id:
         raise erro_campo("nome", "Já existe um local com este nome.")
     return dict(
         nome=nome, municipio=municipio, tipo=tipo, latitude=dados.latitude, longitude=dados.longitude,
-        ativo=dados.ativo, numero_car=numero_car, proprietarios=proprietarios,
+        ativo=dados.ativo, numero_car=numero_car, logradouro=logradouro, uf=uf, cep=cep,
+        proprietarios=proprietarios,
     )
 
 
 def _como_modelos(proprietarios: list[dict]) -> list[Proprietario]:
-    return [Proprietario(nome=p["nome"], telefone=p["telefone"], ordem=p["ordem"]) for p in proprietarios]
+    return [Proprietario(**p) for p in proprietarios]
 
 
 def criar(db: Session, dados: LocalIn) -> Local:

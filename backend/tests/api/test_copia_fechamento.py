@@ -27,7 +27,7 @@ def editar_local(api, local_id=1, **mudancas):
 
 def nova_em_andamento(api, local_id=1):
     r = api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": local_id,
-                                            "data_agendamento": "2026-10-20", "objetivo": "x"})
+                                            "data_agendamento": "2026-10-20", "objetivo": "x", "equipe": [{"nome": "Analista Fictício"}]})
     d = r.json()
     for it in d["itens"]:
         assert api.patch(f"{BASE}/inspecoes/{d['id']}/itens/{it['id']}", json={"situacao": "CONFORME"}).status_code == 200
@@ -107,8 +107,8 @@ def test_copia_fica_gravada_no_banco_como_json_completo(api, engine):
     with engine.connect() as con:
         bruto = con.execute(text("SELECT empreendimento_json FROM inspecao WHERE id = :i"), {"i": id_insp}).scalar()
     dados = json.loads(bruto)
-    assert set(dados) == {"nome", "municipio", "tipo", "latitude", "longitude", "numero_car", "proprietarios"}
-    assert all(set(p) == {"nome", "telefone"} for p in dados["proprietarios"])
+    assert set(dados) == {"nome", "municipio", "tipo", "latitude", "longitude", "numero_car", "logradouro", "uf", "cep", "proprietarios"}
+    assert all({"nome", "telefone", "cpf_cnpj", "corr_cep"} <= set(p) for p in dados["proprietarios"])
     assert dados["proprietarios"][0]["telefone"] == "65900000001"  # só dígitos
 
 

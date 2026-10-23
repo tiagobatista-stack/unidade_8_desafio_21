@@ -19,6 +19,34 @@ class Pagina(BaseModel, Generic[T]):
     tamanho: int
 
 
+class MembroIn(BaseModel):
+    nome: str
+    cargo: str | None = None
+    orgao: str | None = None
+
+
+class AtoIn(BaseModel):
+    id: int | None = None  # obrigatório ao editar o número depois do fechamento
+    tipo: str
+    numero: str | None = None
+
+
+class MembroOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    nome: str
+    cargo: str | None
+    orgao: str | None
+
+
+class AtoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tipo: str
+    numero: str | None
+
+
 class InspecaoIn(BaseModel):
     numero_processo: str
     local_id: int
@@ -27,6 +55,16 @@ class InspecaoIn(BaseModel):
     observacoes: str | None = None
     observacoes_vistoria: str | None = None
     data_realizacao: date | None = None
+    interessado_orgao: str | None = None
+    interessado_unidade: str | None = None
+    interessado_comarca: str | None = None
+    interessado_requerente: str | None = None
+    assunto_tipo: str | None = None
+    assunto_outro: str | None = None
+    providencias_texto: str | None = None
+    numero_relatorio_sema: str | None = None
+    equipe: list[MembroIn] | None = None
+    atos: list[AtoIn] | None = None
 
 
 class InspecaoPatch(BaseModel):
@@ -37,6 +75,16 @@ class InspecaoPatch(BaseModel):
     observacoes: str | None = None
     observacoes_vistoria: str | None = None
     data_realizacao: date | None = None
+    interessado_orgao: str | None = None
+    interessado_unidade: str | None = None
+    interessado_comarca: str | None = None
+    interessado_requerente: str | None = None
+    assunto_tipo: str | None = None
+    assunto_outro: str | None = None
+    providencias_texto: str | None = None
+    numero_relatorio_sema: str | None = None
+    equipe: list[MembroIn] | None = None
+    atos: list[AtoIn] | None = None
 
 
 class CancelarIn(BaseModel):
@@ -109,6 +157,16 @@ class InspecaoDetalhe(BaseModel):
     atualizado_em: datetime
     fechado_em: datetime | None
     empreendimento: EmpreendimentoOut
+    interessado_orgao: str | None
+    interessado_unidade: str | None
+    interessado_comarca: str | None
+    interessado_requerente: str | None
+    assunto_tipo: str | None
+    assunto_outro: str | None
+    providencias_texto: str | None
+    numero_relatorio_sema: str | None
+    equipe: list[MembroOut]
+    atos: list[AtoOut]
     numero_relatorio: str | None
     campos_editaveis: list[str]
     fechamento_bloqueado_motivo: str | None

@@ -69,8 +69,20 @@ def _garantir_colunas(engine: Engine) -> None:
     insp = inspect(engine)
     tabelas = set(insp.get_table_names())
     novas = {  # tabela -> [(coluna, definição)]
-        "inspecao": [("numero_processo", "VARCHAR(60)"), ("empreendimento_json", "TEXT"), ("numero_relatorio", "VARCHAR(20)")],
-        "local": [("numero_car", "VARCHAR(60)")],
+        "inspecao": [("numero_processo", "VARCHAR(60)"), ("empreendimento_json", "TEXT"), ("numero_relatorio", "VARCHAR(20)"),
+            ("interessado_orgao", "VARCHAR(120)"), ("interessado_unidade", "VARCHAR(120)"),
+            ("interessado_comarca", "VARCHAR(80)"), ("interessado_requerente", "VARCHAR(120)"),
+            ("assunto_tipo", "VARCHAR(80)"), ("assunto_outro", "VARCHAR(120)"), ("providencias_texto", "TEXT"),
+            ("numero_relatorio_sema", "VARCHAR(40)"),
+        ],
+        "local": [
+            ("numero_car", "VARCHAR(60)"), ("logradouro", "VARCHAR(200)"), ("uf", "VARCHAR(2)"), ("cep", "VARCHAR(8)"),
+        ],
+        "proprietario": [
+            ("cpf_cnpj", "VARCHAR(14)"), ("corr_logradouro", "VARCHAR(200)"), ("corr_numero", "VARCHAR(20)"),
+            ("corr_complemento", "VARCHAR(80)"), ("corr_bairro", "VARCHAR(80)"), ("corr_municipio", "VARCHAR(80)"),
+            ("corr_uf", "VARCHAR(2)"), ("corr_cep", "VARCHAR(8)"),
+        ],
     }
     indices = [  # SQLite não aceita UNIQUE em ADD COLUMN: o índice único é criado à parte
         ("inspecao", "CREATE UNIQUE INDEX IF NOT EXISTS ux_inspecao_numero_relatorio ON inspecao (numero_relatorio)"),

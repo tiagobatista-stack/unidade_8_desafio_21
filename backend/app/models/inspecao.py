@@ -49,6 +49,15 @@ class Inspecao(Base):
     empreendimento_json: Mapped[str | None] = mapped_column(Text)
     # 'NNNN/AAAA', atribuído no fechamento; único e nunca reutilizado (nulo enquanto não finalizada)
     numero_relatorio: Mapped[str | None] = mapped_column(String(20))
+    # R4: dados da capa da SEMA (todos opcionais; legado fica nulo). Interessado vazio = demanda interna.
+    interessado_orgao: Mapped[str | None] = mapped_column(String(120))
+    interessado_unidade: Mapped[str | None] = mapped_column(String(120))
+    interessado_comarca: Mapped[str | None] = mapped_column(String(80))
+    interessado_requerente: Mapped[str | None] = mapped_column(String(120))
+    assunto_tipo: Mapped[str | None] = mapped_column(String(80))
+    assunto_outro: Mapped[str | None] = mapped_column(String(120))  # texto livre quando assunto_tipo = 'Outro'
+    providencias_texto: Mapped[str | None] = mapped_column(Text)
+    numero_relatorio_sema: Mapped[str | None] = mapped_column(String(40))  # número oficial atribuído pela SEMA
     local_id: Mapped[int] = mapped_column(ForeignKey("local.id"), nullable=False)
     objetivo: Mapped[str] = mapped_column(String(200), nullable=False)
     observacoes: Mapped[str | None] = mapped_column(Text)
@@ -73,4 +82,16 @@ class Inspecao(Base):
         "FotoVistoria",
         cascade="all, delete-orphan",
         order_by="FotoVistoria.ordem, FotoVistoria.id",
+    )
+    equipe = relationship(
+        "EquipeMembro",
+        cascade="all, delete-orphan",
+        order_by="EquipeMembro.ordem, EquipeMembro.id",
+        lazy="selectin",
+    )
+    atos = relationship(
+        "AtoLavrado",
+        cascade="all, delete-orphan",
+        order_by="AtoLavrado.ordem, AtoLavrado.id",
+        lazy="selectin",
     )
