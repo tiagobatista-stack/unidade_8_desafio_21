@@ -7,6 +7,7 @@ from app.domain.constantes import Origem, Situacao, Status
 from app.domain.resultado import calcular_resultado
 from app.models import Inspecao, ItemInspecao, Local, Proprietario
 from app.seed.modelo import garantir_modelo
+from app.services import empreendimento_service
 
 LOCAIS = [
     ("Fazenda Horizonte Azul", "Vila Nova do Cerrado", "Propriedade rural", -10.42318, -58.71264),
@@ -101,6 +102,8 @@ def carregar(db: Session) -> list[Inspecao]:
         if status == Status.FINALIZADA:
             insp.resultado = calcular_resultado(insp.itens)
             insp.fechado_em = datetime.combine(real, datetime.min.time()).replace(hour=17)
+            insp.local = locais[idx_local]
+            empreendimento_service.copiar_no_fechamento(insp)
         db.add(insp)
         criadas.append(insp)
     db.flush()

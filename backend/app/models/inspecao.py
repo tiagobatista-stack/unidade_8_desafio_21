@@ -44,6 +44,8 @@ class Inspecao(Base):
     codigo: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     # Obrigatório pela API; nulo só em linhas anteriores à existência do campo.
     numero_processo: Mapped[str | None] = mapped_column(String(60))
+    # Cópia (JSON) dos dados do empreendimento gravada no fechamento; o relatório da finalizada usa esta cópia.
+    empreendimento_json: Mapped[str | None] = mapped_column(Text)
     local_id: Mapped[int] = mapped_column(ForeignKey("local.id"), nullable=False)
     objetivo: Mapped[str] = mapped_column(String(200), nullable=False)
     observacoes: Mapped[str | None] = mapped_column(Text)

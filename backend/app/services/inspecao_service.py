@@ -64,7 +64,7 @@ def detalhe(inspecao: Inspecao) -> dict:
     return {
         **{c.key: getattr(inspecao, c.key) for c in Inspecao.__table__.columns},
         "local": inspecao.local, "itens": itens, "fotos": [foto_dict(f) for f in inspecao.fotos],
-        "empreendimento": empreendimento_service.instantaneo(inspecao.local),
+        "empreendimento": empreendimento_service.da_inspecao(inspecao),
         "campos_editaveis": sorted(CAMPOS_EDITAVEIS.get(inspecao.status, set())),
         "fechamento_bloqueado_motivo": motivo_fechamento_bloqueado(inspecao.status),
         "registro_bloqueado_motivo": motivo_registro_bloqueado(inspecao.status, inspecao.data_agendamento, clock.hoje()),
@@ -196,6 +196,7 @@ def fechar(db: Session, inspecao_id: int) -> Inspecao:
         )
     agora = clock.agora()
     inspecao.resultado = calcular_resultado(inspecao.itens)  # RN06
+    empreendimento_service.copiar_no_fechamento(inspecao)  # C2: o relatório não muda se o Local for editado depois
     inspecao.status = Status.FINALIZADA
     inspecao.fechado_em = agora
     inspecao.atualizado_em = agora

@@ -2,7 +2,9 @@
 
 Antes do fechamento a inspeção mostra os dados atuais do Local; ao fechar, uma cópia é gravada (C2).
 """
-from app.models import Local
+import json
+
+from app.models import Inspecao, Local
 
 
 def instantaneo(local: Local) -> dict:
@@ -15,3 +17,15 @@ def instantaneo(local: Local) -> dict:
         "numero_car": local.numero_car,
         "proprietarios": [{"nome": p.nome, "telefone": p.telefone} for p in local.proprietarios],
     }
+
+
+def copiar_no_fechamento(inspecao: Inspecao) -> None:
+    """Grava a cópia dos dados do Local; chamada dentro da transação que finaliza a inspeção."""
+    inspecao.empreendimento_json = json.dumps(instantaneo(inspecao.local), ensure_ascii=False)
+
+
+def da_inspecao(inspecao: Inspecao) -> dict:
+    """Finalizada: a cópia do fechamento. Demais status (ou legado sem cópia): dados atuais do Local."""
+    if inspecao.status == "FINALIZADA" and inspecao.empreendimento_json:
+        return json.loads(inspecao.empreendimento_json)
+    return instantaneo(inspecao.local)

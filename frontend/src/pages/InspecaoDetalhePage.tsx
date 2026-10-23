@@ -76,6 +76,13 @@ export default function InspecaoDetalhePage() {
 
       <section aria-labelledby="titulo-empreendimento" className="cartao" data-testid="empreendimento">
         <h2 id="titulo-empreendimento">Empreendimento</h2>
+        <p className="dica" data-testid="origem-empreendimento">
+          {insp.status === "FINALIZADA"
+            ? "Cópia dos dados registrada no fechamento: alterações feitas depois no cadastro do local não mudam esta inspeção."
+            : insp.status === "CANCELADA"
+              ? "Dados atuais do cadastro do local."
+              : "Dados atuais do cadastro do local; serão copiados quando a inspeção for fechada."}
+        </p>
         <dl className="dados dados-simples">
           <div><dt>Local</dt><dd>{insp.empreendimento.nome} — {insp.empreendimento.municipio}</dd></div>
           <div><dt>Tipo</dt><dd>{insp.empreendimento.tipo}</dd></div>

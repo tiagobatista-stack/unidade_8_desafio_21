@@ -69,7 +69,7 @@ def _garantir_colunas(engine: Engine) -> None:
     insp = inspect(engine)
     tabelas = set(insp.get_table_names())
     novas = {  # tabela -> [(coluna, definição)]
-        "inspecao": [("numero_processo", "VARCHAR(60)")],
+        "inspecao": [("numero_processo", "VARCHAR(60)"), ("empreendimento_json", "TEXT")],
         "local": [("numero_car", "VARCHAR(60)")],
     }
     for tabela, colunas_novas in novas.items():

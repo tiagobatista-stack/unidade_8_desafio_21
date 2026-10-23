@@ -10,6 +10,7 @@ from app import database
 from app.errors import registrar_handlers
 from app.routers import fotos, inspecoes, itens, locais, painel
 from app.seed.modelo import garantir_modelo
+from app.services.migracao_dados import preencher_legado
 
 
 @asynccontextmanager
@@ -17,6 +18,7 @@ async def lifespan(_: FastAPI):
     database.criar_tabelas()
     with Session(database.get_engine()) as db:
         garantir_modelo(db)
+        preencher_legado(db)
     yield
 
 

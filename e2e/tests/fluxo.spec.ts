@@ -311,6 +311,30 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await tela(page, "painel-apos-fechar-5-1-4");
   });
 
+  test("cópia no fechamento: editar o Local depois não muda a inspeção finalizada", async ({ page }) => {
+    await page.goto("/inspecoes");
+    await page.getByRole("link", { name: "INS-004", exact: true }).click();
+    const emp = page.getByTestId("empreendimento");
+    await expect(page.getByTestId("origem-empreendimento")).toContainText("Cópia dos dados registrada no fechamento");
+    await expect(emp).toContainText("Reserva Mata Ciliar Beta — Campo Verde do Sul");
+    await expect(page.getByTestId("proprietarios")).toContainText("Proprietário Fictício Quatro");
+    // troca tipo e proprietário no cadastro do Local
+    await irPara(page, "Locais");
+    await page.getByRole("link", { name: "Editar Reserva Mata Ciliar Beta" }).click();
+    await page.getByLabel("Tipo do local").fill("Tipo alterado depois (E2E)");
+    await page.getByLabel("Nome do proprietário 1").fill("Dono Novo Fictício");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await expect(page.getByRole("row").filter({ hasText: "Reserva Mata Ciliar Beta" })).toContainText("Dono Novo Fictício");
+    // a finalizada continua com os dados do fechamento
+    await page.goto("/inspecoes");
+    await page.getByRole("link", { name: "INS-004", exact: true }).click();
+    await expect(page.getByTestId("proprietarios")).toContainText("Proprietário Fictício Quatro");
+    await expect(page.getByTestId("proprietarios")).not.toContainText("Dono Novo Fictício");
+    await expect(page.getByTestId("empreendimento")).toContainText("Área de preservação");
+    await expect(page.getByTestId("empreendimento")).not.toContainText("Tipo alterado depois");
+    await tela(page, "copia-no-fechamento-local-editado-depois");
+  });
+
   test("INS-003 reprovada em somente leitura e layout estreito", async ({ page }) => {
     await page.goto("/inspecoes");
     await page.getByRole("link", { name: "INS-003", exact: true }).click();

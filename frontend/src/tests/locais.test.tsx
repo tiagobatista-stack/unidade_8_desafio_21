@@ -197,3 +197,30 @@ describe("Detalhe da inspeção: Empreendimento", () => {
     expect(screen.getByTestId("proprietarios")).toHaveTextContent("Não informado");
   });
 });
+
+
+describe("Detalhe da inspeção: origem dos dados do empreendimento (C2)", () => {
+  const com = (status: any, extra = {}) =>
+    rota("GET", "/inspecoes/4", () => ({ corpo: inspecao({ status, empreendimento: empreendimentoDe(fazenda), ...extra }) }));
+
+  test("finalizada informa que é a cópia do fechamento", async () => {
+    instalarApi(com("FINALIZADA", { resultado: "APROVADA" }));
+    renderizar("/inspecoes/4");
+    expect(await screen.findByTestId("origem-empreendimento")).toHaveTextContent("Cópia dos dados registrada no fechamento");
+    expect(screen.getByTestId("origem-empreendimento")).toHaveTextContent("não mudam esta inspeção");
+  });
+
+  test.each(["ABERTA", "EM_ANDAMENTO"])("%s informa que usa os dados atuais e que serão copiados", async (status) => {
+    instalarApi(com(status));
+    renderizar("/inspecoes/4");
+    expect(await screen.findByTestId("origem-empreendimento")).toHaveTextContent("serão copiados quando a inspeção for fechada");
+  });
+
+  test("cancelada usa os dados atuais, sem promessa de cópia", async () => {
+    instalarApi(com("CANCELADA", { motivo_cancelamento: "x" }));
+    renderizar("/inspecoes/4");
+    const texto = await screen.findByTestId("origem-empreendimento");
+    expect(texto).toHaveTextContent("Dados atuais do cadastro do local.");
+    expect(texto).not.toHaveTextContent("copiados");
+  });
+});
