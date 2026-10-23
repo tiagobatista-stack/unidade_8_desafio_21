@@ -24,6 +24,17 @@ describe("Painel", () => {
     expect(screen.getByRole("link", { name: "Exportar CSV" })).toHaveAttribute("href", "/api/v1/exportacao/inspecoes.csv");
   });
 
+  test("dois arquivos distintos: CSV por inspeção e CSV dos itens do checklist", async () => {
+    instalarApi(rota("GET", "/indicadores", { corpo: { inspecoes: 5, pendencias: 2, finalizadas: 3, gerado_em: "x" } }));
+    renderizar("/");
+    const porInspecao = await screen.findByRole("link", { name: "Exportar CSV" });
+    const itens = screen.getByRole("link", { name: "Exportar itens (CSV)" });
+    expect(itens).toHaveAttribute("href", "/api/v1/exportacao/itens.csv");
+    expect(itens).toHaveAttribute("download", "itens-checklist.csv");
+    expect(porInspecao).toHaveAttribute("download", "inspecoes.csv"); // o arquivo atual segue igual
+    expect(itens).not.toBe(porInspecao);
+  });
+
   test("estado de carregamento e de erro", async () => {
     instalarApi(rota("GET", "/indicadores", erroApi(500, "ERRO_INTERNO", "Erro interno.")));
     renderizar("/");

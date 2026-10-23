@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { api, URL_CSV } from "../api/api";
+import { api, URL_CSV, URL_CSV_ITENS } from "../api/api";
 import { paraErro } from "../api/cliente";
 import { Carregando, MensagemErro, Modal } from "../components/Basicos";
 import { useIndicadores, useInvalidarTudo } from "../hooks/useDados";
@@ -61,6 +61,7 @@ export default function PainelPage() {
         <Link className="botao secundario" to="/inspecoes?status=PENDENTES">Ver pendências</Link>
         <button type="button" className="secundario" onClick={() => setConfirmando(true)}>Carregar exemplos</button>
         <a className="botao secundario" href={URL_CSV} download="inspecoes.csv">Exportar CSV</a>
+        <a className="botao secundario" href={URL_CSV_ITENS} download="itens-checklist.csv">Exportar itens (CSV)</a>
       </div>
       {aviso && <div role="status" className="alerta alerta-ok">{aviso}</div>}
       <MensagemErro erro={erroAcao} />

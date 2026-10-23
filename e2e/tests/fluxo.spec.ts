@@ -394,12 +394,23 @@ test.describe.serial("Fluxo completo do MVP", () => {
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Exportar CSV" }).click()]);
     expect(download.suggestedFilename()).toBe("inspecoes.csv");
     const csv = await request.get(`${API}/exportacao/inspecoes.csv`);
-    const texto = (await csv.text()).replace(/^﻿/, "");
+    const texto = (await csv.text()).replace(/^\uFEFF/, "");
     const linhas = texto.trim().split("\r\n");
     expect(linhas[0]).toBe("codigo;numero_processo;local;latitude;longitude;data_agendamento;data_realizacao;status;resultado;observacoes_vistoria;qtd_fotos");
     expect(linhas.some((l) => l.startsWith("INS-006;") && l.includes(";CANCELADA;"))).toBe(true);
     expect(linhas.find((l) => l.startsWith("INS-004;SEMA-PRO-2026/10004;"))).toMatch(/;FINALIZADA;APROVADA;"?Trecho sul percorrido\.[\s\S]*;4$/);
     writeFileSync(path.join(raiz, "docs", "evidencias", "exportacao-e2e.csv"), texto, "utf-8");
+    // CSV dos itens do checklist: arquivo separado, uma linha por item
+    const [downloadItens] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Exportar itens (CSV)" }).click()]);
+    expect(downloadItens.suggestedFilename()).toBe("itens-checklist.csv");
+    const csvItens = (await (await request.get(`${API}/exportacao/itens.csv`)).text()).replace(/^\uFEFF/, "");
+    const itens = csvItens.trim().split("\r\n");
+    expect(itens[0]).toBe("codigo_inspecao;numero_processo;local;status_inspecao;resultado_inspecao;item_numero;item_descricao;critico;situacao;observacao;origem;qtd_fotos");
+    expect(itens.length - 1).toBe(6 * 6); // INS-001..INS-006 (a cancelada também), 6 itens do modelo cada
+    expect(itens.find((l) => l.startsWith("INS-003;") && l.includes(";6;Destinação de efluentes regular;")))
+      .toMatch(/;REPROVADA;6;Destinação de efluentes regular;sim;NAO_CONFORME;Caixa separadora com sinais de transbordamento[^;]*;MODELO;2$/);
+    expect(itens.some((l) => l.startsWith("INS-006;") && l.includes(";CANCELADA;"))).toBe(true);
+    writeFileSync(path.join(raiz, "docs", "evidencias", "itens-checklist-e2e.csv"), csvItens, "utf-8");
     const verif = await (await request.get(`${API}/utilitarios/verificar-fotos`)).json();
     expect(verif.total_inconsistencias).toBe(0);
   });

@@ -50,3 +50,4 @@ export const api = {
 };
 
 export const URL_CSV = urlApi("/api/v1/exportacao/inspecoes.csv");
+export const URL_CSV_ITENS = urlApi("/api/v1/exportacao/itens.csv");
