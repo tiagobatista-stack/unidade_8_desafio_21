@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import App from "../App";
-import type { InspecaoDetalhe, InspecaoResumo, Item, Foto } from "../api/tipos";
+import type { InspecaoDetalhe, InspecaoResumo, Item, Foto, Local } from "../api/tipos";
 
 export interface Chamada {
   metodo: string;
@@ -69,7 +69,12 @@ export function renderizar(caminho = "/") {
   );
 }
 
-export const local = { id: 1, nome: "Fazenda Horizonte Azul", municipio: "Vila Nova do Cerrado", tipo: "Propriedade rural", latitude: -10.42318, longitude: -58.71264, ativo: true };
+export const local: Local = { id: 1, nome: "Fazenda Horizonte Azul", municipio: "Vila Nova do Cerrado", tipo: "Propriedade rural", latitude: -10.42318, longitude: -58.71264, ativo: true, numero_car: null, proprietarios: [] };
+
+export const empreendimentoDe = (l: Local) => ({
+  nome: l.nome, municipio: l.municipio, tipo: l.tipo, latitude: l.latitude, longitude: l.longitude,
+  numero_car: l.numero_car, proprietarios: l.proprietarios,
+});
 
 export function item(id: number, parcial: Partial<Item> = {}): Item {
   return { id, descricao: `Item ${id}`, critico: false, situacao: "NAO_RESPONDIDO", observacao: null, origem: "MODELO", ordem: id, qtd_fotos: 0, ...parcial };
@@ -100,7 +105,7 @@ export function inspecao(parcial: Partial<InspecaoDetalhe> = {}): InspecaoDetalh
     id: 4, codigo: "INS-004", numero_processo: "SEMA-PRO-2026/12345", campos_editaveis: EDITAVEIS[parcial.status ?? "ABERTA"],
     // como a API: só em ABERTA há motivo para não fechar; o aviso de agendamento futuro vem de cada teste
     fechamento_bloqueado_motivo: (parcial.status ?? "ABERTA") === "ABERTA" ? MSG_NAO_INICIADA : null,
-    registro_bloqueado_motivo: null, local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
+    registro_bloqueado_motivo: null, empreendimento: empreendimentoDe(parcial.local ?? local), local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
     data_agendamento: "2026-10-20", data_realizacao: null, status: "ABERTA", resultado: null, motivo_cancelamento: null,
     fechado_em: null, itens, fotos: [],
     resumo_itens: { total: itens.length, respondidos: itens.filter((i) => i.situacao !== "NAO_RESPONDIDO").length, nao_conformes: itens.filter((i) => i.situacao === "NAO_CONFORME").length },

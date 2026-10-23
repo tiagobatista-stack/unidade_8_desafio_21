@@ -217,6 +217,20 @@ describe("A4: campos de formulário com id, name e label", () => {
     verificarCampos("Detalhe + modal cancelar");
   });
 
+  test("Locais: cadastro e edição, com linhas de proprietários", async () => {
+    const dono = { nome: "Dono Fictício", telefone: "65900000001", telefone_formatado: "(65) 90000-0001" };
+    instalarApi(rota("GET", "/locais/1", { corpo: { ...local, id: 1, proprietarios: [dono, { ...dono, nome: "Dona Fictícia" }] } }));
+    const { unmount } = renderizar("/locais/novo");
+    await screen.findByLabelText("Nome do local");
+    await userEvent.click(screen.getByRole("button", { name: "+ Adicionar proprietário" }));
+    await userEvent.click(screen.getByRole("button", { name: "+ Adicionar proprietário" }));
+    verificarCampos("Locais: novo");
+    unmount();
+    renderizar("/locais/1/editar");
+    await screen.findByLabelText("Nome do proprietário 2");
+    verificarCampos("Locais: editar");
+  });
+
   test("os testes continuam achando os campos pelo label visível", async () => {
     instalarApi(locais);
     renderizar("/inspecoes/nova");

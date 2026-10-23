@@ -64,8 +64,6 @@ export default function InspecaoDetalhePage() {
 
       <dl className="dados">
         <div><dt>Processo</dt><dd data-testid="numero-processo">{insp.numero_processo ?? "—"}</dd></div>
-        <div><dt>Local</dt><dd>{insp.local.nome} — {insp.local.municipio}</dd></div>
-        <div><dt>Coordenadas</dt><dd>{insp.local.latitude}, {insp.local.longitude}</dd></div>
         <div><dt>Data de agendamento (planejada)</dt><dd>{formatarData(insp.data_agendamento)}</dd></div>
         <div><dt>Data de realização (vistoria em campo)</dt><dd>{formatarData(insp.data_realizacao)}</dd></div>
         <div><dt>Resultado</dt><dd>{rotuloResultado(insp.resultado)}</dd></div>
@@ -75,6 +73,30 @@ export default function InspecaoDetalhePage() {
           <div><dt>Motivo do cancelamento</dt><dd><TextoPuro valor={insp.motivo_cancelamento} /></dd></div>
         )}
       </dl>
+
+      <section aria-labelledby="titulo-empreendimento" className="cartao" data-testid="empreendimento">
+        <h2 id="titulo-empreendimento">Empreendimento</h2>
+        <dl className="dados dados-simples">
+          <div><dt>Local</dt><dd>{insp.empreendimento.nome} — {insp.empreendimento.municipio}</dd></div>
+          <div><dt>Tipo</dt><dd>{insp.empreendimento.tipo}</dd></div>
+          <div><dt>Coordenadas</dt><dd>{insp.empreendimento.latitude}, {insp.empreendimento.longitude}</dd></div>
+          <div><dt>Nº do CAR</dt><dd data-testid="numero-car">{insp.empreendimento.numero_car ?? "Não informado"}</dd></div>
+          <div className="largo">
+            <dt>Proprietários</dt>
+            <dd data-testid="proprietarios">
+              {insp.empreendimento.proprietarios.length === 0 ? (
+                "Não informado"
+              ) : (
+                <ul className="lista-simples">
+                  {insp.empreendimento.proprietarios.map((p, i) => (
+                    <li key={i}>{p.nome}{p.telefone_formatado ? ` — ${p.telefone_formatado}` : ""}</li>
+                  ))}
+                </ul>
+              )}
+            </dd>
+          </div>
+        </dl>
+      </section>
 
       <MensagemErro erro={erroAcao} />
 

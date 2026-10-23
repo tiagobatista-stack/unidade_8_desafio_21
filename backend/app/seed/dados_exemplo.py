@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.constantes import Origem, Situacao, Status
 from app.domain.resultado import calcular_resultado
-from app.models import Inspecao, ItemInspecao, Local
+from app.models import Inspecao, ItemInspecao, Local, Proprietario
 from app.seed.modelo import garantir_modelo
 
 LOCAIS = [
@@ -13,6 +13,15 @@ LOCAIS = [
     ("Serraria Ipê Dourado", "Porto das Águas", "Indústria madeireira", -11.21456, -58.30977),
     ("Posto Rio Claro", "São Tomé do Norte", "Posto de combustíveis", -9.71234, -58.12845),
     ("Reserva Mata Ciliar Beta", "Campo Verde do Sul", "Área de preservação", -10.91507, -59.46288),
+]
+
+# Dados 100% fictícios (LGPD): CAR de mentira e proprietários inventados, telefones (65) 90000-000N.
+CAR_EXEMPLO = ["MT-5107925-00000000000000000000000000000001", None, None, "MT-5107925-00000000000000000000000000000004"]
+PROPRIETARIOS_EXEMPLO = [
+    [("Proprietário Fictício Um", "65900000001"), ("Proprietária Fictícia Dois", "65900000002")],
+    [("Madeireira Fictícia Ltda.", "65900000003")],
+    [],
+    [("Proprietário Fictício Quatro", None)],
 ]
 
 OBS_VISTORIA = {
@@ -53,8 +62,14 @@ def banco_povoado(db: Session) -> bool:
 def carregar(db: Session) -> list[Inspecao]:
     """Insere locais, modelo e 5 inspeções, gravando o estado final de cada exemplo."""
     locais = [
-        Local(nome=n, municipio=m, tipo=t, latitude=la, longitude=lo, ativo=True)
-        for n, m, t, la, lo in LOCAIS
+        Local(
+            nome=n, municipio=m, tipo=t, latitude=la, longitude=lo, ativo=True, numero_car=CAR_EXEMPLO[k],
+            proprietarios=[
+                Proprietario(nome=nome, telefone=tel, ordem=ordem)
+                for ordem, (nome, tel) in enumerate(PROPRIETARIOS_EXEMPLO[k])
+            ],
+        )
+        for k, (n, m, t, la, lo) in enumerate(LOCAIS)
     ]
     modelo = garantir_modelo(db)
     db.add_all(locais)

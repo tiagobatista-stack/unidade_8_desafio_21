@@ -13,6 +13,12 @@ export interface Pagina<T> {
   tamanho: number;
 }
 
+export interface Proprietario {
+  nome: string;
+  telefone: string | null; // só dígitos
+  telefone_formatado: string | null;
+}
+
 export interface Local {
   id: number;
   nome: string;
@@ -21,6 +27,19 @@ export interface Local {
   latitude: number;
   longitude: number;
   ativo: boolean;
+  numero_car: string | null;
+  proprietarios: Proprietario[];
+}
+
+/** Dados do empreendimento na inspeção (cópia do fechamento quando finalizada). */
+export interface Empreendimento {
+  nome: string;
+  municipio: string;
+  tipo: string;
+  latitude: number;
+  longitude: number;
+  numero_car: string | null;
+  proprietarios: Proprietario[];
 }
 
 export interface InspecaoResumo {
@@ -67,6 +86,7 @@ export interface InspecaoDetalhe {
   id: number;
   codigo: string;
   numero_processo: string | null;
+  empreendimento: Empreendimento;
   campos_editaveis: string[];
   fechamento_bloqueado_motivo: string | null;
   registro_bloqueado_motivo: string | null;
@@ -98,6 +118,8 @@ export interface NovoLocal {
   tipo: string;
   latitude: number;
   longitude: number;
+  numero_car?: string | null;
+  proprietarios?: { nome: string; telefone: string | null }[];
 }
 
 export interface FiltrosLista {

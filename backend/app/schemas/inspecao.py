@@ -4,7 +4,7 @@ from typing import Generic, Literal, TypeVar
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.foto import FotoOut
-from app.schemas.local import LocalOut, LocalResumo
+from app.schemas.local import EmpreendimentoOut, LocalOut, LocalResumo
 
 T = TypeVar("T")
 
@@ -108,6 +108,7 @@ class InspecaoDetalhe(BaseModel):
     criado_em: datetime
     atualizado_em: datetime
     fechado_em: datetime | None
+    empreendimento: EmpreendimentoOut
     campos_editaveis: list[str]
     fechamento_bloqueado_motivo: str | None
     registro_bloqueado_motivo: str | None

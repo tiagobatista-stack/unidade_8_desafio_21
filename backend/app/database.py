@@ -67,11 +67,19 @@ def _garantir_colunas(engine: Engine) -> None:
     from sqlalchemy import inspect, text
 
     insp = inspect(engine)
-    if "inspecao" in insp.get_table_names():
-        colunas = {c["name"] for c in insp.get_columns("inspecao")}
-        if "numero_processo" not in colunas:
-            with engine.begin() as con:
-                con.execute(text("ALTER TABLE inspecao ADD COLUMN numero_processo VARCHAR(60)"))
+    tabelas = set(insp.get_table_names())
+    novas = {  # tabela -> [(coluna, definição)]
+        "inspecao": [("numero_processo", "VARCHAR(60)")],
+        "local": [("numero_car", "VARCHAR(60)")],
+    }
+    for tabela, colunas_novas in novas.items():
+        if tabela not in tabelas:
+            continue  # tabela nova: o create_all já a cria completa
+        existentes = {c["name"] for c in insp.get_columns(tabela)}
+        for coluna, definicao in colunas_novas:
+            if coluna not in existentes:
+                with engine.begin() as con:
+                    con.execute(text(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {definicao}"))
 
 
 def criar_tabelas() -> None:

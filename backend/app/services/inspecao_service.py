@@ -23,6 +23,7 @@ from app.errors import ErroNegocio, erro_campo
 from app.models import Inspecao, ItemInspecao
 from app.repositories import inspecao_repository as repo
 from app.repositories import local_repository
+from app.services import empreendimento_service
 from app.schemas.inspecao import InspecaoIn, InspecaoPatch
 
 # RN14: campos editáveis por status
@@ -63,6 +64,7 @@ def detalhe(inspecao: Inspecao) -> dict:
     return {
         **{c.key: getattr(inspecao, c.key) for c in Inspecao.__table__.columns},
         "local": inspecao.local, "itens": itens, "fotos": [foto_dict(f) for f in inspecao.fotos],
+        "empreendimento": empreendimento_service.instantaneo(inspecao.local),
         "campos_editaveis": sorted(CAMPOS_EDITAVEIS.get(inspecao.status, set())),
         "fechamento_bloqueado_motivo": motivo_fechamento_bloqueado(inspecao.status),
         "registro_bloqueado_motivo": motivo_registro_bloqueado(inspecao.status, inspecao.data_agendamento, clock.hoje()),

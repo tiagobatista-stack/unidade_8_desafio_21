@@ -82,3 +82,55 @@ def test_inspecao_antiga_sem_numero_aparece_e_pode_ser_corrigida(tmp_path, monke
         assert r.status_code == 200 and r.json()["numero_processo"] == "SEMA-PRO-2026/12345"
         assert c.get(f"/api/v1/exportacao/inspecoes.csv").status_code == 200  # CSV tolera número nulo
     engine.dispose()
+
+
+# ---------- C1: Local ganha numero_car e nasce a tabela proprietario ----------
+ESQUEMA_LOCAL_ANTIGO = """
+CREATE TABLE local (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome VARCHAR(120) NOT NULL UNIQUE,
+    municipio VARCHAR(80) NOT NULL,
+    tipo VARCHAR(40) NOT NULL,
+    latitude NUMERIC(8, 5) NOT NULL,
+    longitude NUMERIC(8, 5) NOT NULL,
+    ativo BOOLEAN NOT NULL
+)
+"""
+
+
+def test_banco_antigo_ganha_numero_car_e_tabela_proprietario(tmp_path):
+    engine = database.criar_engine(f"sqlite:///{(tmp_path / 'local_antigo.db').as_posix()}")
+    with engine.begin() as con:
+        con.execute(text(ESQUEMA_LOCAL_ANTIGO))
+        con.execute(text("INSERT INTO local (nome, municipio, tipo, latitude, longitude, ativo) VALUES ('Local Antigo Fictício', 'M', 'T', -12.5, -55.5, 1)"))
+    assert "proprietario" not in inspect(engine).get_table_names()
+
+    database.configurar(engine)
+    database.criar_tabelas()
+
+    assert "numero_car" in {c["name"] for c in inspect(engine).get_columns("local")}
+    assert "proprietario" in inspect(engine).get_table_names()
+    with engine.connect() as con:
+        assert tuple(con.execute(text("SELECT nome, numero_car FROM local")).one()) == ("Local Antigo Fictício", None)
+    database.criar_tabelas()  # idempotente
+    engine.dispose()
+
+
+def test_local_antigo_pode_receber_car_e_proprietarios(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import criar_app
+
+    monkeypatch.setenv("FOTOS_DIR", str(tmp_path / "fotos"))
+    engine = database.criar_engine(f"sqlite:///{(tmp_path / 'local_antigo2.db').as_posix()}")
+    with engine.begin() as con:
+        con.execute(text(ESQUEMA_LOCAL_ANTIGO))
+        con.execute(text("INSERT INTO local (nome, municipio, tipo, latitude, longitude, ativo) VALUES ('Local Antigo Fictício', 'M', 'T', -12.5, -55.5, 1)"))
+    database.configurar(engine)
+    with TestClient(criar_app()) as c:  # o lifespan migra o banco
+        antigo = c.get("/api/v1/locais/1").json()
+        assert antigo["numero_car"] is None and antigo["proprietarios"] == []
+        r = c.put("/api/v1/locais/1", json={"nome": "Local Antigo Fictício", "municipio": "M", "tipo": "T", "latitude": -12.5,
+                                           "longitude": -55.5, "numero_car": "mt-1", "proprietarios": [{"nome": "Dono Fictício", "telefone": "65900000001"}]})
+        assert r.status_code == 200 and r.json()["proprietarios"][0]["telefone_formatado"] == "(65) 90000-0001"
+    engine.dispose()

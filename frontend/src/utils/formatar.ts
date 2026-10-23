@@ -14,6 +14,17 @@ export function formatarDataHora(iso: string | null | undefined): string {
   return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : VAZIO;
 }
 
+/** "65900000001" -> "(65) 90000-0001" (só apresentação; a validação do telefone é do backend). */
+export function formatarTelefone(valor: string | null | undefined): string {
+  const d = (valor ?? "").replace(/\D/g, "");
+  if (d.length !== 10 && d.length !== 11) return valor ?? "";
+  const cabeca = d.length === 11 ? 5 : 4;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 2 + cabeca)}-${d.slice(2 + cabeca)}`;
+}
+
+/** Só informativo: UF-código IBGE-código (padrão SICAR). Outros formatos continuam aceitos. */
+export const segueModeloSicar = (car: string) => /^[A-Za-z]{2}-\d{7}-[A-Za-z0-9]+$/.test(car.trim());
+
 export const ROTULO_STATUS: Record<string, string> = {
   ABERTA: "Aberta",
   EM_ANDAMENTO: "Em andamento",

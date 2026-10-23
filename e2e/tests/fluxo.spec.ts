@@ -128,6 +128,53 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await expect(page.getByRole("row")).toHaveCount(5); // 001..004 (005 mudou para 20005)
   });
 
+  test("Locais: cadastrar e editar com CAR e proprietários e ver o empreendimento na inspeção", async ({ page }) => {
+    await page.goto("/");
+    await irPara(page, "Locais");
+    await expect(page.getByRole("row")).toHaveCount(5); // cabeçalho + 4 locais de exemplo
+    await expect(page.getByRole("cell", { name: "(65) 90000-0001" }).first()).toBeVisible();
+    await tela(page, "locais-lista");
+    await page.getByRole("link", { name: "Novo local" }).click();
+    await page.getByLabel("Nome do local").fill("Fazenda E2E Fictícia");
+    await page.getByLabel("Município do local").fill("Cidade E2E Fictícia");
+    await page.getByLabel("Tipo do local").fill("Propriedade rural");
+    await page.getByLabel("Latitude do local").fill("-12,5");
+    await page.getByLabel("Longitude do local").fill("-55,5");
+    await page.getByLabel("Número do CAR").fill("mt-5107925-00000000000000000000000000009999");
+    await page.getByRole("button", { name: "+ Adicionar proprietário" }).click();
+    await page.getByLabel("Nome do proprietário 1").fill("Dono E2E Fictício");
+    await page.getByLabel("Telefone do proprietário 1").fill("65900000009");
+    await page.getByLabel("Nome do local").click(); // sai do campo: o telefone é formatado
+    await expect(page.getByLabel("Telefone do proprietário 1")).toHaveValue("(65) 90000-0009");
+    await tela(page, "local-novo-com-car-e-proprietario");
+    await page.getByRole("button", { name: "Cadastrar local" }).click();
+    const linha = page.getByRole("row").filter({ hasText: "Fazenda E2E Fictícia" });
+    await expect(linha).toContainText("MT-5107925-00000000000000000000000000009999"); // guardado em maiúsculas
+    await expect(linha).toContainText("Dono E2E Fictício — (65) 90000-0009");
+    // editar: telefone inválido é recusado pela API, depois corrigido; segundo proprietário
+    await page.getByRole("link", { name: "Editar Fazenda E2E Fictícia" }).click();
+    await page.getByRole("button", { name: "+ Adicionar proprietário" }).click();
+    await page.getByLabel("Nome do proprietário 2").fill("Dona E2E Fictícia");
+    await page.getByLabel("Telefone do proprietário 2").fill("123");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await expect(page.getByRole("alert")).toContainText("proprietarios.1.telefone");
+    await tela(page, "local-telefone-invalido-recusado");
+    await page.getByLabel("Telefone do proprietário 2").fill("6533334444");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await expect(page.getByRole("row").filter({ hasText: "Fazenda E2E Fictícia" })).toContainText("Dona E2E Fictícia — (65) 3333-4444");
+    await tela(page, "locais-lista-apos-editar");
+    // o novo local aparece no detalhe da inspeção (Em aberto: dados atuais do Local)
+    await page.goto("/inspecoes");
+    await page.getByRole("link", { name: "Editar INS-005" }).click();
+    await page.getByLabel("Local").selectOption({ label: "Fazenda E2E Fictícia — Cidade E2E Fictícia" });
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    const cartao = page.getByTestId("empreendimento");
+    await expect(cartao).toContainText("Fazenda E2E Fictícia — Cidade E2E Fictícia");
+    await expect(page.getByTestId("numero-car")).toHaveText("MT-5107925-00000000000000000000000000009999");
+    await expect(page.getByTestId("proprietarios")).toContainText("Dono E2E Fictício — (65) 90000-0009");
+    await tela(page, "detalhe-empreendimento-car-e-proprietarios");
+  });
+
   test("nova inspeção e cancelamento com motivo", async ({ page }) => {
     await page.goto("/inspecoes/nova");
     await page.getByRole("button", { name: "Cadastrar inspeção" }).click();

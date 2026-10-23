@@ -4,6 +4,8 @@ import type { FiltrosLista } from "../api/tipos";
 
 export const useIndicadores = () => useQuery({ queryKey: ["indicadores"], queryFn: api.indicadores });
 export const useLocais = () => useQuery({ queryKey: ["locais"], queryFn: api.locais });
+export const useLocal = (id: number, habilitado = true) =>
+  useQuery({ queryKey: ["locais", id], queryFn: () => api.local(id), enabled: habilitado });
 export const useInspecoes = (f: FiltrosLista) =>
   useQuery({ queryKey: ["inspecoes", "lista", f], queryFn: () => api.inspecoes(f) });
 export const useInspecao = (id: number) =>

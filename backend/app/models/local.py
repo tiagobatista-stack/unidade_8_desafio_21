@@ -1,5 +1,5 @@
 from sqlalchemy import Boolean, CheckConstraint, Integer, Numeric, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -19,3 +19,10 @@ class Local(Base):
     latitude: Mapped[float] = mapped_column(Numeric(8, 5, asdecimal=False), nullable=False)
     longitude: Mapped[float] = mapped_column(Numeric(8, 5, asdecimal=False), nullable=False)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    numero_car: Mapped[str | None] = mapped_column(String(60))  # Cadastro Ambiental Rural, opcional
+    proprietarios = relationship(
+        "Proprietario",
+        cascade="all, delete-orphan",
+        order_by="Proprietario.ordem, Proprietario.id",
+        lazy="selectin",
+    )
