@@ -11,3 +11,6 @@ __pycache__/
 e2e/.tmp/
 e2e/test-results/
 playwright-report/
+
+.vercel
+.env*

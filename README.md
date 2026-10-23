@@ -83,6 +83,10 @@ O backend continua na máquina do usuário (`127.0.0.1:8000`); só o frontend es
 
 Os dados continuam só no computador local; o site publicado não guarda nada.
 
+**Site publicado:** https://unidade-8-desafio-21.vercel.app (projeto `unidade-8-desafio-21`, equipe `tiago-alexandre`; raiz `frontend`, preset Vite, deploy pela CLI a partir da raiz do repositório com `vercel deploy --prod`; deploy automático por push está desativado no projeto).
+
+**Primeiro acesso no navegador:** o Chrome/Edge pede permissão para o site acessar dispositivos da rede local (é o acesso a `127.0.0.1`). É preciso **permitir**; se negar, o painel mostra "Não foi possível conectar à API." e a permissão pode ser refeita nas configurações do site. Valide com o backend rodando e `CORS_ORIGINS=https://unidade-8-desafio-21.vercel.app`.
+
 ## Dados e backup
 
 O banco fica em `backend/data/inspecoes.db` e as fotos em `backend/data/fotos/`. O backup é manual: copie **o arquivo `.db` e a pasta `fotos/`** juntos. Nada disso é versionado.
