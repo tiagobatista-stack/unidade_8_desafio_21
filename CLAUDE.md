@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado atual do repositório
 
-"Inspeções Simuladas" (laboratório SEMA/MT, **dados 100% fictícios**). Backend (`backend/`), frontend (`frontend/`) e E2E (`e2e/`) estão implementados; faltam a documentação M0 (`docs/requisitos.md`, ADRs etc.) e a matriz CA01–CA85 da S4. O status das sprints está na seção 10 do handoff; evidências em `docs/evidencias/`.
+"Inspeções Simuladas" (laboratório SEMA/MT, **dados 100% fictícios**). Backend (`backend/`), frontend (`frontend/`) e E2E (`e2e/`) estão implementados; faltam a documentação M0 (`docs/requisitos.md`, ADRs etc.) e a matriz CA01–CA110 da S4. O status das sprints está na seção 10 do handoff; evidências em `docs/evidencias/`.
 
 - `HANDOFF_CLAUDE_CODE.md` é a **fonte única de verdade** do escopo (entidades, RN01–RN34, endpoints, contrato de erro, CA01–CA73, seed, fora de escopo). O que não está nele está fora do escopo; dúvida de regra → seção 9 (Pendências P1–P11); se não estiver lá, perguntar antes de decidir.
 - `PLANO_EXECUTAVEL.md` traz, por sprint, objetivo, prompt, comandos de verificação, critérios de aceite e condição de parada. Os documentos referem `docs/PLANO_EXECUTAVEL.md` na estrutura alvo.
@@ -36,7 +36,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Numeração CA01–CA73 é estável; não renumerar. A rodada R1 (23/10/2026) acrescentou RN35–RN38 e CA74–CA85 (seção 16 do handoff).
 - `numero_processo` é obrigatório na API (texto livre ≤60, editável em Aberta/Em andamento) mas **nulo no banco** para linhas antigas; `database._garantir_colunas` acrescenta a coluna a bancos criados antes dela (sem Alembic).
 - `GET /inspecoes` aceita `status` repetido (grupos do Painel) e `numero_processo`; o detalhe traz `campos_editaveis` (a regra RN14 fica no backend, a tela só renderiza).
-- Locais podem ser criados pela tela (RN36); edição/inativação continua fora do escopo.
+- Locais: a tela Locais lista, cria e edita (RN36, RN40); inativar/excluir fica fora. `numero_car` é texto livre (nunca rejeitar formato sem confirmar com o usuário) e os proprietários vivem em tabela própria, com telefone só em dígitos.
+- Ao fechar, `inspecao_service.fechar` grava a cópia do empreendimento (`empreendimento_json`) e reserva o `numero_relatorio` (`numeracao_service`, contador por ano) **antes** de mudar resultado/status (autoflush + CHECKs); a finalizada exibe a cópia, as demais os dados atuais do Local.
+- Relatório: `GET /inspecoes/{id}/relatorio` (backend monta tudo, inclusive a regra do resultado) e `pages/RelatorioPage.tsx`. A impressão usa `@media print` e uma regra `@page` injetada pela página (rodapé e marca de prévia em caixas de margem); `position: fixed` NÃO serve para rodapé (cobriu conteúdo no PDF). Nada de biblioteca de PDF no backend sem consultar o usuário.
+- Migração sem Alembic: `database._garantir_colunas` (ADD COLUMN e índices) + `services/migracao_dados.preencher_legado` (cópia e numeração das finalizadas antigas), ambos idempotentes e chamados na subida da API.
+- Dados 100% fictícios no seed, testes e capturas (LGPD): proprietários "… Fictício", telefones `(65) 90000-000N`, CAR `MT-5107925-0000…`.
+- Regras de B (vistoria antes do agendamento, `respondido_em`, exportação dos itens) aguardam decisão do usuário (PB1–PB3 no handoff): não implementar sem ele.
+- Formulários: todo input/select/textarea com `id`, `name` e `label htmlFor`; há teste genérico (`correcoes-a.test.tsx`) que quebra se faltar algum.
 - Frontend publicado na Vercel com backend local: `VITE_API_URL` (build) e `CORS_ORIGINS` (backend); detalhes no README.
 - Seed de testes é fixture (S1A); o endpoint `POST /utilitarios/carregar-exemplos` só existe na S3 (409 `BANCO_JA_POVOADO` se já houver dados).
 

@@ -22,6 +22,8 @@ Escopo e decisões: **HANDOFF_CLAUDE_CODE.md** (fonte única de verdade). Este p
 | S2B | observações da vistoria e fotos na UI | CA35–CA41, CA69–CA71 (UI) |
 | S3 | indicadores reais, exemplos, CSV | CA18–CA24, CA28, CA58 |
 | S4 | testes, correções, README, GitHub | CA01–CA73 completos |
+| R1 | cartões clicáveis, editar, nº do processo, novo local | CA74–CA85 |
+| R2 | usabilidade, CAR e proprietários, cópia no fechamento, relatório | CA86–CA110 |
 
 ---
 
@@ -377,3 +379,71 @@ git tag -l && git log --oneline | head -20
 **Evidências.** `matriz-ca.md`, `S4.md` (correções + roteiro de fumaça), saída das suítes, link ou captura do CI, `git log`/tag.
 
 **Condição de parada.** Parar se algum CA não puder ser verificado (reportar, não marcar como atendido), se o clone limpo falhar, ou se for preciso mudar escopo para fechar o MVP. Push/publicação só com confirmação explícita.
+
+---
+
+## R1 — Melhorias pós-uso (cartões clicáveis, editar, número do processo, novo local)
+
+**Objetivo.** Atender o primeiro feedback de uso: cartões do Painel que listam a categoria, botão e página de edição, número do processo (obrigatório, texto livre, com filtro) e criação de local pela tela de nova inspeção.
+
+**Dependências.** S3 concluída. Decisões do usuário: número do processo obrigatório em texto livre e filtro por número.
+
+**Arquivos prováveis.** `backend/app/{database,models/inspecao,services/inspecao_service,repositories/inspecao_repository,routers/inspecoes,schemas/inspecao,services/export_service}.py`, `frontend/src/pages/{PainelPage,InspecoesPage,EditarInspecaoPage,NovaInspecaoPage,InspecaoDetalhePage}.tsx`, `frontend/src/components/ModalNovoLocal.tsx`, `e2e/tests/fluxo.spec.ts`, `docs/evidencias/R1-melhorias.md`.
+
+**Prompt para Claude Code (R1)**
+```
+Leia HANDOFF_CLAUDE_CODE.md (RN14, RN35–RN38, seções 3, 5, 8). Execute SOMENTE a rodada R1.
+1. Backend: numero_processo obrigatório (texto livre ≤60, editável em Aberta/Em andamento), migração leve da coluna, status repetível e filtro numero_processo em GET /inspecoes, campos_editaveis no detalhe, coluna numero_processo no CSV.
+2. Frontend: cartões do Painel como links para a lista da categoria (Inspeções exclui canceladas); coluna e busca por processo na lista; botão e página Editar guiados por campos_editaveis; campo número do processo e botão "+ Novo local" em Nova inspeção.
+3. Testes de serviço, API, Vitest e E2E (com telas). Não relaxe testes existentes: explique qualquer número diferente.
+4. Atualize README e HANDOFF (seção 16) e crie docs/evidencias/R1-melhorias.md. PARE.
+```
+
+**Comandos de verificação**
+```
+cd backend && pytest -q
+cd ../frontend && npm test -- --run && npm run build
+cd ../e2e && npx playwright test
+```
+
+**Critérios de aceite.** CA74–CA85 (seção 11 do handoff). Cada cartão abre a lista da categoria e o total coincide com o contador; número do processo obrigatório; banco antigo migrado sem perder dados.
+
+**Evidências.** `docs/evidencias/R1-melhorias.md`; telas em `docs/evidencias/telas/`.
+
+**Condição de parada.** Parar se o contrato do `POST /inspecoes` precisar mudar além do campo novo, ou se a migração do banco existente exigir recriar tabelas.
+
+---
+
+## R2 — Usabilidade, empreendimento (CAR e proprietários), cópia no fechamento e relatório
+
+**Objetivo.** Corrigir os problemas achados no teste manual (Parte A), acrescentar CAR e proprietários aos locais com tela própria, congelar os dados do empreendimento no fechamento e gerar um relatório de vistoria numerado e imprimível.
+
+**Dependências.** R1 concluída. Decisões do usuário: CAR em texto livre (nunca rejeita formato); legado preenchido na inicialização; `VITE_API_URL` mantido em `127.0.0.1`. A Parte B (regra de vistoria antes do agendamento, `respondido_em`, exportação dos itens) **não** faz parte desta rodada: ver `PB1`–`PB3` na seção 9 do handoff.
+
+**Arquivos prováveis.** Backend: `domain/{orientacoes,contato,relatorio}.py`, `models/{proprietario,contador_relatorio,local,inspecao}.py`, `services/{local_service,empreendimento_service,numeracao_service,relatorio_service,migracao_dados,inspecao_service}.py`, `schemas/{local,relatorio,inspecao}.py`, `routers/inspecoes.py`, `database.py` (migração leve), `seed/`. Frontend: `components/{FormularioLocal,ModalNovoLocal,ItemChecklist,UploadFotos,...}.tsx`, `pages/{LocaisPage,LocalFormPage,RelatorioPage,InspecaoDetalhePage,EditarInspecaoPage}.tsx`, `estilos.css` (impressão). E2E e evidências.
+
+**Prompt para Claude Code (R2)**
+```
+Leia HANDOFF_CLAUDE_CODE.md (RN39–RN46, seções 3, 5, 8, 9 e 11). Execute SOMENTE a rodada R2, na ordem e com um commit por assunto:
+1. fix (Parte A): A1 mensagem orientativa ao fechar inspeção Aberta (código TRANSICAO_INVALIDA, botão desabilitado com o motivo); A2 aviso de que só registrar a situação inicia a inspeção; A3 aviso preventivo de agendamento futuro com link para editar e situações desabilitadas; A4 id, name e label em todos os campos (com teste genérico); A5 rótulos das datas e "Checklist concluído em dd/mm/aaaa hh:mm".
+2. feat (C1): Local com numero_car (maiúsculas, trim, ≤60, nunca rejeita formato) e proprietarios (tabela própria, nome ≤120, telefone só dígitos 10/11 com DDD, exibido (65) 99999-9999); tela Locais (listar, cadastrar, editar) e cartão Empreendimento no detalhe; seed e testes só com dados fictícios; migração leve.
+3. feat (C2): ao fechar, gravar na mesma transação a cópia dos dados do empreendimento; a finalizada usa a cópia; antes do fechamento usa o Local atual; preencher o legado na inicialização.
+4. feat (C3): numero_relatorio NNNN/AAAA (sequencial por ano, único, nunca reutilizado), GET /inspecoes/{id}/relatorio, página /inspecoes/:id/relatorio com prévia sem número e marca, CSS @media print (A4, sem menu/botões, rodapé e Página X de Y em todas as páginas, no máximo 2 fotos por página). Sem biblioteca de PDF no backend.
+5. docs: README, PLANO_EXECUTAVEL, HANDOFF, evidências e telas.
+Antes de cada commit rode backend, frontend e E2E. Não relaxe testes. Explique todo número diferente. Confira que nenhum .env*, backend/data, dist, node_modules, .venv, test-results ou .db entra no commit. PARE e entregue o resumo.
+```
+
+**Comandos de verificação**
+```
+cd backend && pytest -q
+cd ../frontend && npm test -- --run && npm run build
+cd ../e2e && npx playwright test        # também gera docs/evidencias/relatorio-INS-004.pdf e relatorio-previa-INS-005.pdf
+git status --short && git log --oneline -10
+```
+Conferir os PDFs gerados: rodapé e "Página X de Y" em todas as páginas, no máximo 2 fotos por página sem corte, prévia com a marca no topo de todas as páginas e sem número.
+
+**Critérios de aceite.** CA86–CA110 (seção 11 do handoff). Em especial: editar o Local depois do fechamento não muda a finalizada; numeração sem repetição inclusive na virada de ano; prévia nunca mostra número e não consome número; dados 100% fictícios no seed, testes e capturas.
+
+**Evidências.** `docs/evidencias/R2-melhorias.md` (CA → teste, defeitos encontrados), telas em `docs/evidencias/telas/`, PDFs do relatório e resumo de cada suíte (334 backend, 124 frontend, 14 E2E na última execução).
+
+**Condição de parada.** Parar se aparecer conflito no `git pull --rebase` (mostrar os arquivos, sem resolver); se o push falhar por credencial (informar o erro e o comando, sem gravar token); se algum arquivo proibido aparecer no commit; ou se for preciso rejeitar um formato de CAR (exige confirmação do usuário). Não implementar a Parte B sem decisão.

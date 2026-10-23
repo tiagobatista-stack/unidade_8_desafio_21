@@ -2,7 +2,7 @@
 
 > Fonte única de verdade do escopo aprovado. Use como base do `/init` (CLAUDE.md) e do `README.md`.
 > Todos os dados são **fictícios**. Nenhum dado real da SEMA/MT.
-> Data de referência da consolidação: 23/10/2026. **Atualizado em 23/10/2026** após a rodada de melhorias pós-uso (seção 16).
+> Data de referência da consolidação: 23/10/2026. **Atualizado em 23/10/2026** após a rodada de melhorias pós-uso (seção 16) e a rodada R2 (CAR e proprietários, cópia no fechamento, relatório numerado).
 
 ## 0. Regras de trabalho (leia antes de qualquer ação)
 
@@ -34,9 +34,9 @@ Perfis (apenas papéis de desenho, sem controle de acesso): *Inspetor simulado* 
 
 ## 3. Entidades e campos
 
-**Local:** id; nome (único, ≤120); municipio (≤80); tipo (≤40); latitude decimal(8,5) CHECK −18,05..−7,35; longitude decimal(8,5) CHECK −61,65..−50,20; ativo (padrão verdadeiro).
+**Local:** id; nome (único, ≤120); municipio (≤80); tipo (≤40); latitude decimal(8,5) CHECK −18,05..−7,35; longitude decimal(8,5) CHECK −61,65..−50,20; ativo (padrão verdadeiro). **numero_car** (texto livre ≤60, opcional, guardado em maiúsculas; nenhum formato é rejeitado); **proprietarios** 0..20 em tabela própria `proprietario` (id; local_id FK CASCADE; nome ≤120 obrigatório; telefone só dígitos, 10 ou 11 com DDD, opcional; ordem).
 
-**Inspecao:** id; codigo (único, `INS-` + id 3 dígitos, gerado); **numero_processo** (texto livre ≤60, obrigatório no cadastro e na edição; nulo apenas em linhas criadas antes do campo existir; não único; ex.: `SEMA-PRO-2026/12345`); local_id FK; objetivo (≤200, obrig.); observacoes (texto, opc.); **observacoes_vistoria** (texto ≤2000, opc.); data_agendamento (obrig.); data_realizacao (opc., CHECK ≥ agendamento); status (`ABERTA`,`EM_ANDAMENTO`,`FINALIZADA`,`CANCELADA`); resultado (`APROVADA`,`APROVADA_COM_RESSALVAS`,`REPROVADA`; só se FINALIZADA); motivo_cancelamento (≤300; obrig. se CANCELADA); criado_em; atualizado_em; fechado_em (só FINALIZADA).
+**Inspecao:** id; codigo (único, `INS-` + id 3 dígitos, gerado); **numero_processo** (texto livre ≤60, obrigatório no cadastro e na edição; nulo apenas em linhas criadas antes do campo existir; não único; ex.: `SEMA-PRO-2026/12345`); local_id FK; objetivo (≤200, obrig.); observacoes (texto, opc.); **observacoes_vistoria** (texto ≤2000, opc.); data_agendamento (obrig.); data_realizacao (opc., CHECK ≥ agendamento); status (`ABERTA`,`EM_ANDAMENTO`,`FINALIZADA`,`CANCELADA`); resultado (`APROVADA`,`APROVADA_COM_RESSALVAS`,`REPROVADA`; só se FINALIZADA); motivo_cancelamento (≤300; obrig. se CANCELADA); criado_em; atualizado_em; fechado_em (só FINALIZADA). **empreendimento_json** (Text; cópia JSON dos dados do empreendimento gravada no fechamento); **numero_relatorio** (`NNNN/AAAA`, único, só em FINALIZADA). Tabela auxiliar `contador_relatorio` (ano PK; ultimo): último número emitido em cada ano, nunca decresce.
 
 **ItemInspecao:** id; inspecao_id FK (CASCADE); modelo_item_id FK opc.; descricao (≤200); critico; situacao (`NAO_RESPONDIDO` padrão,`CONFORME`,`NAO_CONFORME`,`NAO_SE_APLICA`); observacao; origem (`MODELO`,`AVULSO`); ordem.
 
@@ -88,9 +88,17 @@ Perfis (apenas papéis de desenho, sem controle de acesso): *Inspetor simulado* 
 | RN33 | Anotação editável só em ABERTA/EM_ANDAMENTO; nunca vazia. |
 | RN34 | Anotação não influencia resultado nem fechamento; não dispensa a observação do item NC. |
 | RN35 | `numero_processo` é obrigatório (trim; vazio → 422 `VALIDACAO_CAMPO`), texto livre de até 60 caracteres, não único; pode ser corrigido enquanto a inspeção estiver ABERTA ou EM_ANDAMENTO. Linhas antigas sem número continuam válidas e exigem número ao serem editadas nesse campo. |
-| RN36 | A tela "Nova inspeção" permite criar um local (nome, município, tipo, latitude, longitude) via `POST /locais`, com as mesmas validações de RN11; o local criado já fica selecionado. Edição e inativação de locais pela interface continuam fora do escopo. |
+| RN36 | A tela "Nova inspeção" permite criar um local (nome, município, tipo, latitude, longitude) via `POST /locais`, com as mesmas validações de RN11; o local criado já fica selecionado. Na rodada R2 a tela **Locais** passou a listar, cadastrar e editar locais (RN40); inativar ou excluir locais pela interface continua fora do escopo. |
 | RN37 | Os cartões do Painel levam à lista da própria categoria: Inspeções = ABERTA + EM_ANDAMENTO + FINALIZADA (exclui canceladas), Pendências = ABERTA + EM_ANDAMENTO, Finalizadas = FINALIZADA; o total listado coincide com o contador. |
 | RN38 | A API informa em `campos_editaveis` (no detalhe da inspeção) quais campos podem ser alterados no status atual; a interface só renderiza o que vier nessa lista (a regra RN14 fica no backend). |
+| RN39 | `numero_car` é opcional e de texto livre (maiúsculas, trim, ≤60). Nenhum formato é rejeitado (SICAR, SIMCAR-MT ou outro); a tela só avisa, sem bloquear, quando não segue UF-código IBGE-código. |
+| RN40 | Proprietários (0..20 por Local): nome obrigatório (≤120); telefone opcional, guardado só com dígitos, 10 ou 11 com DDD (11 a 99) e exibido como (65) 99999-9999. Erros de validação apontam a linha (`proprietarios.N.telefone`). O PUT de local substitui a lista inteira. |
+| RN41 | Ao fechar, grava-se uma cópia dos dados do empreendimento (nome, município, tipo, coordenadas, CAR, proprietários e telefones) na mesma transação que muda o status. A inspeção FINALIZADA usa a cópia; antes do fechamento (e quando CANCELADA) usa os dados atuais do Local. Se a cópia falhar, o fechamento é desfeito. |
+| RN42 | O número do relatório `NNNN/AAAA` é sequencial por ano (ano da data de fechamento, relógio injetável), atribuído no fechamento, único e nunca reutilizado (contador por ano que não decresce). Só existe em FINALIZADA; cancelar ou tentar fechar sem sucesso não consome número. |
+| RN43 | O relatório (`GET /inspecoes/{id}/relatorio`) de inspeção finalizada é o documento numerado, com a cópia do empreendimento; nos demais status é uma **prévia**, sem número e com a marca "PRÉVIA, NÃO FINALIZADO" ("CANCELADA, NÃO FINALIZADO" quando cancelada). Seções: 1 Identificação, 2 Empreendimento, 3 Objetivo e observações, 4 Checklist (numerado, com totais e críticos não conformes destacados), 5 Registro fotográfico (imagem original, no máximo 2 por página), 6 Conclusão (resultado e a regra que o gerou). |
+| RN44 | A impressão usa o navegador (CSS `@media print`, A4, sem menu nem botões); não há biblioteca de PDF no backend. Rodapé com nº do relatório, INS e aviso de sistema fictício, e "Página X de Y", saem das caixas de margem do `@page` (Chrome/Edge; Firefox pode omitir a numeração). O botão "Imprimir / Salvar PDF" só é liberado depois que as imagens carregarem. |
+| RN45 | Mensagens orientativas vêm do backend: fechar inspeção ABERTA devolve 409 `TRANSICAO_INVALIDA` com "A inspeção ainda não foi iniciada. Registre a situação de pelo menos um item do checklist antes de fechar."; o detalhe traz `fechamento_bloqueado_motivo` e `registro_bloqueado_motivo` (agendamento futuro), e a tela os exibe antes de qualquer tentativa. |
+| RN46 | Todo campo de formulário da interface tem `id`, `name` únicos e `label` associado (`htmlFor`). |
 
 **Comportamentos de serviço:** o primeiro item registrado em ABERTA muda o status para EM_ANDAMENTO e preenche `data_realizacao` com hoje se vazia (ver pendência P1). Gravar observações/fotos não muda status.
 
@@ -100,10 +108,11 @@ Perfis (apenas papéis de desenho, sem controle de acesso): *Inspetor simulado* 
 |---|---|---|---|
 | GET `/health` | vida | 200 | — |
 | GET `/locais`, `/locais/{id}` | listar/detalhar locais | 200 | 404 |
-| POST `/locais`, PUT `/locais/{id}` | criar/atualizar (valida RN11); o POST também é usado pela tela "Nova inspeção" (RN36) | 201/200 | 404, 422 |
+| POST `/locais`, PUT `/locais/{id}` | criar/atualizar (valida RN11, RN39, RN40); o corpo aceita `numero_car` e `proprietarios[{nome, telefone}]`; a resposta traz `telefone` (dígitos) e `telefone_formatado`; também usado pela tela "Nova inspeção" (RN36) | 201/200 | 404, 422 |
 | POST `/inspecoes` | cadastrar (exige `numero_processo`; gera código + 6 itens) | 201 | 422 |
 | GET `/inspecoes` | filtros `status` (**repetível**: `?status=ABERTA&status=EM_ANDAMENTO`), `numero_processo` (contém, sem diferenciar maiúsculas; `%` e `_` valem como texto), `data_inicio`, `data_fim` (sobre agendamento), `local_id`, `pagina`, `tamanho`; ordenação agendamento desc | 200 | 422 |
 | GET `/inspecoes/{id}` | detalhe (local, itens, fotos, resumo) | 200 | 404 |
+| GET `/inspecoes/{id}/relatorio` | relatório estruturado (RN43): `previa`, `marca_dagua`, `numero_relatorio`, `titulo`, `identificacao`, `empreendimento`, `objetivo`, `checklist {itens, totais}`, `fotos` (URL do original), `conclusao {resultado, regra}` | 200 | 404 |
 | PATCH `/inspecoes/{id}` | edição por status (RN14) | 200 | 404, 409, 422 |
 | POST `/inspecoes/{id}/cancelar` | `{motivo}` | 200 | 404, 409, 422 |
 | POST `/inspecoes/{id}/fechar` | fecha e calcula resultado | 200 | 404, 409, 422 |
@@ -121,7 +130,7 @@ Perfis (apenas papéis de desenho, sem controle de acesso): *Inspetor simulado* 
 | GET `/utilitarios/verificar-fotos` | consistência registro/arquivo | 200 | — |
 
 **Listas:** envelope `{dados, total, pagina, tamanho}`; a lista de inspeções traz `qtd_fotos` e o local resumido, sem itens.
-**Detalhe:** inclui `local` (com lat/long como número), `itens`, `fotos` (com `url_miniatura`/`url_original`), `resumo_itens {total, respondidos, nao_conformes}` e contagem de fotos por item. Inclui também `numero_processo` e `campos_editaveis` (RN38). A lista de inspeções traz `numero_processo`.
+**Detalhe:** inclui `local` (com lat/long como número), `itens`, `fotos` (com `url_miniatura`/`url_original`), `resumo_itens {total, respondidos, nao_conformes}` e contagem de fotos por item. Inclui também `numero_processo` e `campos_editaveis` (RN38). A lista de inspeções traz `numero_processo`. Também traz `empreendimento` (cópia do fechamento quando finalizada; dados atuais do Local nos demais status), `numero_relatorio` (só finalizada), `fechamento_bloqueado_motivo` e `registro_bloqueado_motivo` (RN45).
 **CSV:** colunas código, **numero_processo**, local, latitude, longitude, data_agendamento, data_realizacao, status, resultado, observacoes_vistoria, qtd_fotos; delimitador `;`, UTF-8 com BOM, aspas e quebras de linha tratadas; textos livres que começam com `=`, `+`, `-` ou `@` recebem apóstrofo inicial (proteção contra fórmulas em planilhas).
 
 ## 6. Contrato de erro (único)
@@ -167,8 +176,11 @@ Ordem de validação no envio de foto: estado da inspeção (409) → campos e a
 | `/` | Painel | 3 cartões **clicáveis** (cada um abre a lista da categoria); atalhos "Nova inspeção" e "Ver pendências"; botões "Carregar exemplos" e "Exportar CSV" |
 | `/inspecoes` | Lista | código, **processo**, local, agendamento, realização ("—"), status, resultado, fotos, **ações (Editar, só em Aberta/Em andamento)**; filtros de status (inclui os grupos "Todas, exceto canceladas" e "Pendências"), **busca por número do processo** e período; mostra o filtro ativo e o total |
 | `/inspecoes/nova` | Nova | **número do processo**, local (com lat/long somente leitura) e botão **"+ Novo local"** (modal, RN36), agendamento, objetivo, observações |
-| `/inspecoes/:id` | Detalhe/execução | cabeçalho (status, **processo**, datas, local); botão **Editar inspeção** quando houver campos editáveis; checklist; item avulso; **observações da vistoria** (contador x/2000); **fotos** (lista de pendentes com anotação obrigatória por foto, galeria, visualizador com anotação); Fechar e Cancelar (modais); somente leitura em FINALIZADA/CANCELADA |
+| `/inspecoes/:id` | Detalhe/execução | cabeçalho (status, **processo**, datas, local); botão **Editar inspeção** quando houver campos editáveis; cartão **Empreendimento** (CAR "Não informado" quando vazio, proprietários) com a origem dos dados; botão **Gerar relatório** em qualquer status; avisos de início da inspeção e de agendamento futuro; "Checklist concluído em dd/mm/aaaa hh:mm" nas finalizadas; checklist; item avulso; **observações da vistoria** (contador x/2000); **fotos** (lista de pendentes com anotação obrigatória por foto, galeria, visualizador com anotação); Fechar e Cancelar (modais); somente leitura em FINALIZADA/CANCELADA |
 | `/inspecoes/:id/editar` | Editar | formulário com os campos de `campos_editaveis` (RN38) editáveis e os demais como texto; envia só o que mudou; erros da API exibidos sem perder o digitado |
+| `/inspecoes/:id/relatorio` | Relatório | relatório numerado e imprimível (RN43, RN44); prévia com marca quando não finalizada; botão "Imprimir / Salvar PDF" |
+| `/locais` | Locais | lista (nome, município, tipo, CAR, proprietários com telefone formatado, coordenadas) e botão "Novo local" |
+| `/locais/novo`, `/locais/:id/editar` | Local | formulário com os campos do local, CAR e lista de proprietários (adicionar/remover); o mesmo formulário aparece no modal "Novo local" de Nova inspeção |
 
 Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No fechamento bloqueado, destacar os itens citados. No modal de fechar: resumo das observações da vistoria, "Fotos anexadas: n" e aviso (não bloqueante) para item NC sem foto.
 
@@ -188,8 +200,14 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 | P10 | Licença do repositório e visibilidade no GitHub. | Pendente (dono do produto decide na S4). |
 | P11 | Versões exatas de Python/Node. | **Resolvida:** Python 3.12 e Node 22 (CI com Node 20), registradas no README. |
 | P12 | Regras do número do processo (23/10/2026). | Decisão do usuário: obrigatório e texto livre; filtro por número na lista. Decisões minhas: máx. 60 caracteres, não único, editável em ABERTA/EM_ANDAMENTO, coluna logo após `codigo` no CSV. Sem validação de formato (`SEMA-PRO-AAAA/NNNNN` é só exemplo). |
-| P13 | Cadastro de locais pela interface (23/10/2026). | Passa ao escopo apenas a **criação** (RN36). Edição/inativação continua fora. |
+| P13 | Cadastro de locais pela interface (23/10/2026). | Criação (R1, RN36) e edição (R2, tela Locais) passaram ao escopo. Inativação e exclusão continuam fora. |
 | P14 | Implantação (23/10/2026). | Frontend na Vercel (`https://unidade-8-desafio-21.vercel.app`) com backend local via `VITE_API_URL` e `CORS_ORIGINS`; os dados ficam no computador do usuário. Backend em nuvem exigiria PostgreSQL e armazenamento de objetos. |
+| P15 | Formato do CAR (23/10/2026). | Decisão do usuário: texto livre, nunca rejeita formato; aviso só informativo. |
+| P16 | Legado da rodada R2. | Decisão do usuário: ao subir a API, finalizadas antigas recebem a cópia do **Local atual** (limitação: não é o Local do dia do fechamento) e número de relatório na ordem do fechamento. |
+| P17 | `VITE_API_URL` na Vercel. | Mantido em `http://127.0.0.1:8000` (backend local): o site só funciona no computador do usuário. Backend em nuvem exigiria PostgreSQL e armazenamento de objetos. |
+| PB1 | **Aguarda decisão.** Vistoria antes da data agendada (RN13/P1). | Padrão atual: (a) manter o bloqueio, com o aviso preventivo da tela. Alternativas: (b) ajustar o agendamento para hoje guardando o original (coluna nova); (c) permitir realização anterior ao agendamento com aviso (quebra o CHECK de datas). |
+| PB2 | **Aguarda decisão.** Data de preenchimento por item (`respondido_em`). | Não implementado. Exigiria ADD COLUMN (o mecanismo de migração leve já existe); `data_realizacao` + `fechado_em` bastam para o relatório atual. |
+| PB3 | **Aguarda decisão.** Exportação dos itens do checklist. | Não implementado. Proposta: CSV separado `GET /exportacao/itens.csv`, uma linha por item, sem alterar o CSV atual. |
 
 ## 10. Status das sprints (atualizar a cada entrega)
 
@@ -200,10 +218,11 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 - [x] S3 — Dashboard com dados reais (+ exemplos e CSV)
 - [~] S4 — Testes, correções, README e GitHub (suítes, E2E e deploy do frontend feitos; faltam a matriz CA01–CA85 completa e a decisão de licença/P10)
 - [x] R1 — Rodada de melhorias pós-uso (23/10/2026): cartões clicáveis (RN37), botão/página Editar e `campos_editaveis` (RN38), número do processo (RN35, migração leve do banco), filtro por número, `status` repetível na lista e criação de local pela tela (RN36).
+- [x] R2 — Correções de usabilidade (A1–A5), dados do empreendimento (CAR e proprietários, tela Locais), cópia no fechamento e relatório de vistoria numerado e imprimível (RN39–RN46). A Parte B ficou só como opções (PB1–PB3).
 
-Evidências da rodada: `docs/evidencias/R1-melhorias.md` (CA → teste).
+Evidências das rodadas: `docs/evidencias/R1-melhorias.md` e `docs/evidencias/R2-melhorias.md` (CA → teste; PDFs do relatório em `docs/evidencias/`).
 
-**Última verificação (23/10/2026):** backend `pytest -q` = **229 passed**; frontend `npm test -- --run` = **59 passed** e `npm run build` ok; E2E Playwright = **11 passed** (telas em `docs/evidencias/telas/`).
+**Última verificação (23/10/2026):** backend `pytest -q` = **334 passed**; frontend `npm test -- --run` = **124 passed** e `npm run build` ok; E2E Playwright = **14 passed** (40 telas em `docs/evidencias/telas/` e 2 PDFs do relatório).
 
 Plano detalhado, prompts e verificações: `docs/PLANO_EXECUTAVEL.md`.
 
@@ -220,6 +239,7 @@ Plano detalhado, prompts e verificações: `docs/PLANO_EXECUTAVEL.md`.
 **Fotos.** CA42 JPEG válido → 201 com miniatura · CA43 PNG e WebP aceitos · CA44 GIF → 415 · CA45 texto renomeado `.jpg` → 415 · CA46 5.242.880 B aceito, 5.242.881 → 413 · CA47 20ª aceita, 21ª → 409 · CA48 duplicada → 409 (outra inspeção aceita) · CA49 EXIF/GPS removido no original e na miniatura · CA50 foto em Aberta mantém status · CA51 galeria imutável em Finalizada/Cancelada (409), consulta ok · CA52 item de outra inspeção → 422 · CA53 remover item avulso mantém a foto sem vínculo · CA54 legenda 200 ok, 201 → 422 · CA55 excluir remove registro, original e miniatura · CA56 fotos persistem · CA57 miniatura ≤ 320 px, original íntegro · CA58 lista mostra 3/2/2/2/0 e CSV `qtd_fotos` · CA59 fechar sem fotos permitido (aviso só se item NC sem foto) · CA60 verificação reporta arquivo apagado e arquivo solto; zero em banco limpo.
 **Anotação da foto.** CA61 sem anotação → 422, nada gravado em disco/banco · CA62 só espaços → 422 · CA63 1000 ok, 1001 → 422 · CA64 1 caractere ok · CA65 trim aplicado · CA66 edição persiste · CA67 editar para vazio → 422, texto anterior mantido · CA68 editar em Finalizada/Cancelada → 409 · CA69 UI: "Enviar" desabilitado com anotação faltando · CA70 falha parcial preserva anotações e grava as válidas · CA71 `<script>` literal com quebras · CA72 anotação não altera resultado (INS-003 segue Reprovada) · CA73 excluir foto remove a anotação.
 **Rodada R1 (CA74–CA85, numeração nova; CA01–CA73 seguem estáveis, P9).** CA74 cadastro sem `numero_processo` (ausente, vazio ou só espaços) → 422 com campo `numero_processo` · CA75 número gravado com trim, 60 caracteres aceito e 61 → 422, texto livre e repetido entre inspeções aceito · CA76 número editável em Aberta e Em andamento (vazio → 422, valor anterior mantido) e em Finalizada/Cancelada → 409 · CA77 detalhe devolve `campos_editaveis` conforme o status (Aberta: 6 campos; Em andamento: 4; Finalizada/Cancelada: nenhum) · CA78 `GET /inspecoes?status=A&status=B` une os status com total e paginação corretos · CA79 filtro `numero_processo` por trecho, sem diferenciar maiúsculas, com `%` e `_` como texto e sem injeção · CA80 cada cartão do Painel abre a lista da categoria e o total listado coincide com o contador (Inspeções exclui canceladas) · CA81 botão Editar na lista e no detalhe só em Aberta/Em andamento · CA82 página de edição permite só os campos de `campos_editaveis`, envia só o que mudou e mostra erros 409/422 sem perder o digitado · CA83 "Novo local" cria local válido já selecionado, exige campos, recusa coordenada fora de MT (erro da API) e cancela sem criar · CA84 banco criado antes do campo ganha a coluna `numero_processo` sem perder dados e a migração é idempotente · CA85 CSV traz `numero_processo` após `codigo` e neutraliza texto que começa com `=`, `+`, `-` ou `@`.
+**Rodada R2 (CA86–CA110, numeração nova; CA01–CA85 seguem estáveis, P9).** CA86 fechar inspeção Aberta devolve mensagem orientativa (código `TRANSICAO_INVALIDA`) e o botão fica desabilitado com o motivo · CA87 aviso, acima do checklist de inspeção Aberta, de que só registrar a situação de um item inicia a inspeção · CA88 aviso preventivo de agendamento futuro com link para editar e seletores de situação desabilitados, mantendo o bloqueio da API · CA89 todo campo de formulário com id, name únicos e label associado · CA90 rótulos de datas explicados e "Checklist concluído em dd/mm/aaaa hh:mm" na finalizada · CA91 CAR opcional, em maiúsculas e sem espaços nas pontas, nenhum formato rejeitado (acima de 60 → 422) · CA92 proprietário exige nome; telefone com 10 ou 11 dígitos e DDD, guardado só com dígitos e exibido (65) 99999-9999; erro aponta a linha; máximo de 20 · CA93 PUT de local substitui a lista de proprietários (lista vazia limpa) e um PUT inválido não altera nada · CA94 tela Locais lista, cadastra e edita, com adicionar e remover proprietários · CA95 detalhe da inspeção mostra o empreendimento (CAR "Não informado" quando vazio) · CA96 editar o Local depois do fechamento não altera a inspeção finalizada; antes do fechamento ela usa os dados atuais · CA97 falha ao gravar a cópia desfaz o fechamento · CA98 preenchimento do legado idempotente e sem sobrescrever cópia existente · CA99 número de relatório `NNNN/AAAA` sequencial, sem repetição e com índice único · CA100 virada de ano reinicia a sequência de cada ano sem reutilizar números · CA101 cancelar, fechamento bloqueado e gerar prévia não consomem número · CA102 relatório finalizado com as 6 seções na ordem, checklist numerado com totais e críticos não conformes destacados · CA103 fotos numeradas com imagem original, legenda, anotação, item vinculado (ou "Sem vínculo") e data de captura · CA104 conclusão com o resultado e a regra aplicada · CA105 prévia sem número, com a marca "PRÉVIA, NÃO FINALIZADO" · CA106 impressão A4 sem menu nem botões, rodapé e "Página X de Y" em todas as páginas e no máximo 2 fotos por página sem corte (evidência: PDFs gerados pelo E2E) · CA107 "Imprimir / Salvar PDF" só habilita com as imagens carregadas · CA108 seed, testes e capturas só com dados fictícios (proprietários, telefones, CAR) · CA109 migração leve idempotente de `numero_car`, `proprietario`, `empreendimento_json`, `numero_relatorio` (índice único) e `contador_relatorio` em banco antigo · CA110 fotos de exemplo com o texto "FOTO FICTÍCIA — INS-00X #n" legível.
 
 ## 12. Dados de exemplo (seed)
 
@@ -237,6 +257,8 @@ Plano detalhado, prompts e verificações: `docs/PLANO_EXECUTAVEL.md`.
 
 **Números de processo do seed (fictícios):** INS-001 `SEMA-PRO-2026/10001` … INS-005 `SEMA-PRO-2026/10005`.
 
+**Empreendimento do seed (100% fictício, LGPD):** L1 com CAR `MT-5107925-00000000000000000000000000000001` e proprietários "Proprietário Fictício Um" (65) 90000-0001 e "Proprietária Fictícia Dois" (65) 90000-0002; L2 com "Madeireira Fictícia Ltda." (65) 90000-0003; L3 sem CAR nem proprietários; L4 com CAR `MT-5107925-00000000000000000000000000000004` e "Proprietário Fictício Quatro" sem telefone. As finalizadas INS-001 a INS-003 já nascem com a cópia do empreendimento e os números `0001/2026`, `0002/2026` e `0003/2026`.
+
 **Observações da vistoria:** INS-001 "Propriedade em boas condições gerais. Documentação apresentada pelo responsável fictício no ato da vistoria. Sem pendências visíveis." · INS-002 "Pátio com acúmulo moderado de serragem junto ao galpão. Placas de segurança parcialmente desgastadas. Registro de manejo com atualização atrasada." · INS-003 "Odor de combustível na área de descarga. Caixa separadora de efluentes com sinais de transbordamento. Responsável ausente no horário da vistoria." · INS-004 "Acesso pela estrada vicinal em bom estado. Nascente delimitada com cerca; vegetação ciliar preservada no trecho norte. Trecho sul ainda não percorrido." · INS-005 vazio.
 
 **Fotos (9, geradas por programa com o texto "FOTO FICTÍCIA — INS-00X #n"):**
@@ -250,7 +272,7 @@ INS-005: sem fotos.
 
 ## 13. Fora do escopo do MVP
 
-Login/perfis com permissão real; múltiplos usuários; rede/nuvem/sincronização; app móvel; tela de edição de modelos de checklist; edição/inativação de locais (a criação de local passou ao escopo, RN36); reabertura de inspeção finalizada; histórico/auditoria; hora do agendamento, calendário, lembretes, alerta de atraso, reagendamento com histórico; relatórios/PDF; gráficos avançados; mapa/GPS/geolocalização; leitura de EXIF; câmera; edição/rotação/marcação sobre imagem; vídeo/PDF anexos; marca d'água; compressão avançada; lixeira; backup automático; busca textual; integração com sistemas reais.
+Login/perfis com permissão real; múltiplos usuários; rede/nuvem/sincronização; app móvel; tela de edição de modelos de checklist; inativação e exclusão de locais (criação e edição passaram ao escopo, RN36 e RN40); reabertura de inspeção finalizada; histórico/auditoria; hora do agendamento, calendário, lembretes, alerta de atraso, reagendamento com histórico; geração de PDF no servidor (o relatório é impresso pelo navegador); relatórios consolidados; gráficos avançados; mapa/GPS/geolocalização; leitura de EXIF; câmera; edição/rotação/marcação sobre imagem; vídeo/PDF anexos; marca d'água; compressão avançada; lixeira; backup automático; busca textual; integração com sistemas reais.
 
 ## 14. Mapa de pastas alvo
 
@@ -277,7 +299,11 @@ Instalação, execução, variáveis de ambiente, testes e publicação do front
 | 23/10/2026 | Número do processo (obrigatório, texto livre) com filtro por número; editável em Aberta/Em andamento | RN35, RN14, CA74–CA79, CA84, CA85, P12 |
 | 23/10/2026 | Cartões do Painel clicáveis e `status` repetível na lista (grupos Inspeções/Pendências/Finalizadas) | RN37, CA78, CA80 |
 | 23/10/2026 | Botão e página Editar guiados por `campos_editaveis` | RN38, CA77, CA81, CA82 |
-| 23/10/2026 | Criação de local pela tela "Nova inspeção" (edição/inativação seguem fora) | RN36, CA83, P13 |
+| 23/10/2026 | Criação de local pela tela "Nova inspeção" (a edição veio com a tela Locais na R2; inativação e exclusão seguem fora) | RN36, CA83, P13 |
 | 23/10/2026 | Frontend publicado na Vercel com backend local | P14, README |
+| 23/10/2026 | Correções de usabilidade: mensagens orientativas, avisos de início e de agendamento futuro, id/name/label nos campos, rótulos das datas | RN45, RN46, CA86–CA90 |
+| 23/10/2026 | CAR e proprietários nos Locais, com tela Locais e cartão Empreendimento no detalhe | RN39, RN40, CA91–CA95, P15 |
+| 23/10/2026 | Cópia dos dados do empreendimento no fechamento, com preenchimento do legado | RN41, CA96–CA98, P16 |
+| 23/10/2026 | Relatório de vistoria numerado (NNNN/AAAA), prévia e impressão A4 pelo navegador | RN42–RN44, CA99–CA107 |
 
-Efeito colateral a lembrar: o contrato de `POST /inspecoes` mudou (campo obrigatório) e o CSV ganhou uma coluna; só o frontend deste repositório consome a API.
+Efeito colateral a lembrar: o contrato de `POST /inspecoes` mudou (campo obrigatório) e o CSV ganhou uma coluna; só o frontend deste repositório consome a API. Na R2, `PUT /locais` passou a substituir a lista de proprietários (um PUT sem `proprietarios` apaga os existentes) e o JSON do local e do detalhe ganhou novos campos.
