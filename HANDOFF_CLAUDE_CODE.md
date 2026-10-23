@@ -185,8 +185,8 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 ## 10. Status das sprints (atualizar a cada entrega)
 
 - [ ] M0 — Documentação
-- [ ] S0 — Estrutura, ambiente e Git
-- [ ] S1 — Banco + API CRUD (A: inspeções/itens/locais · B: fotos)
+- [x] S0 — Estrutura, ambiente e Git
+- [ ] S1 — Banco + API CRUD (A: inspeções/itens/locais [x] · B: fotos [ ])
 - [ ] S2 — Frontend e integração (A: base/lista/nova/checklist · B: observações e fotos)
 - [ ] S3 — Dashboard com dados reais (+ exemplos e CSV)
 - [ ] S4 — Testes, correções, README e GitHub

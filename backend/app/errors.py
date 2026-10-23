@@ -46,3 +46,7 @@ def registrar_handlers(app: FastAPI) -> None:
     async def _interno(_: Request, exc: Exception):
         log.exception("erro interno")
         return JSONResponse(status_code=500, content=corpo_erro("ERRO_INTERNO", "Erro interno."))
+
+
+def erro_campo(campo: str, mensagem: str) -> ErroNegocio:
+    return ErroNegocio("VALIDACAO_CAMPO", "Dados inválidos.", 422, [{"campo": campo, "mensagem": mensagem}])

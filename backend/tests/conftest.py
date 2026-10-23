@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app import clock, database
 from app.main import criar_app
@@ -28,3 +29,17 @@ def engine(tmp_path, monkeypatch):
 def client(engine):
     with TestClient(criar_app()) as c:
         yield c
+
+
+@pytest.fixture
+def db(engine):
+    with Session(engine, expire_on_commit=False) as s:
+        yield s
+
+
+@pytest.fixture
+def exemplos(db):
+    from app.seed.dados_exemplo import carregar
+
+    carregar(db)
+    return db

@@ -1,0 +1,64 @@
+from datetime import date, datetime
+
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.database import Base
+
+
+class Inspecao(Base):
+    __tablename__ = "inspecao"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('ABERTA','EM_ANDAMENTO','FINALIZADA','CANCELADA')", name="ck_inspecao_status"
+        ),
+        CheckConstraint(
+            "resultado IS NULL OR resultado IN ('APROVADA','APROVADA_COM_RESSALVAS','REPROVADA')",
+            name="ck_inspecao_resultado_valido",
+        ),
+        CheckConstraint(
+            "(status = 'FINALIZADA') = (resultado IS NOT NULL)", name="ck_inspecao_resultado_so_finalizada"
+        ),
+        CheckConstraint(
+            "(status = 'FINALIZADA') = (fechado_em IS NOT NULL)", name="ck_inspecao_fechado_em_so_finalizada"
+        ),
+        CheckConstraint(
+            "status <> 'CANCELADA' OR (motivo_cancelamento IS NOT NULL AND length(motivo_cancelamento) > 0)",
+            name="ck_inspecao_motivo_cancelamento",
+        ),
+        CheckConstraint(
+            "data_realizacao IS NULL OR data_realizacao >= data_agendamento", name="ck_inspecao_datas"
+        ),
+        CheckConstraint("length(objetivo) > 0 AND length(objetivo) <= 200", name="ck_inspecao_objetivo"),
+        CheckConstraint(
+            "observacoes_vistoria IS NULL OR length(observacoes_vistoria) <= 2000",
+            name="ck_inspecao_obs_vistoria",
+        ),
+        Index("ix_inspecao_status", "status"),
+        Index("ix_inspecao_data_agendamento", "data_agendamento"),
+        Index("ix_inspecao_local_id", "local_id"),
+        {"sqlite_autoincrement": True},
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    codigo: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    local_id: Mapped[int] = mapped_column(ForeignKey("local.id"), nullable=False)
+    objetivo: Mapped[str] = mapped_column(String(200), nullable=False)
+    observacoes: Mapped[str | None] = mapped_column(Text)
+    observacoes_vistoria: Mapped[str | None] = mapped_column(Text)
+    data_agendamento: Mapped[date] = mapped_column(Date, nullable=False)
+    data_realizacao: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="ABERTA")
+    resultado: Mapped[str | None] = mapped_column(String(30))
+    motivo_cancelamento: Mapped[str | None] = mapped_column(String(300))
+    criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    fechado_em: Mapped[datetime | None] = mapped_column(DateTime)
+
+    local = relationship("Local", lazy="joined")
+    itens = relationship(
+        "ItemInspecao",
+        back_populates="inspecao",
+        cascade="all, delete-orphan",
+        order_by="ItemInspecao.ordem, ItemInspecao.id",
+    )
