@@ -4,7 +4,7 @@ Ferramenta **local, para um único usuário**, que simula o fluxo de inspeções
 
 > **Aviso: todos os dados são fictícios.** Nenhum dado real da SEMA/MT é usado. As imagens de exemplo são geradas por programa.
 
-> **Status:** projeto em fase de documentação (M0). Ainda não há código; o andamento das sprints está na seção 10 do `HANDOFF_CLAUDE_CODE.md`.
+> **Status:** MVP implementado e testado localmente (backend, frontend e E2E). Resultados e telas em `docs/evidencias/`. Pendências abertas (licença, publicação) no fim deste arquivo.
 
 ## Funcionalidades
 
@@ -26,7 +26,7 @@ A API usa o prefixo `/api/v1` e escuta apenas em `127.0.0.1`. Não há login no 
 
 ## Como rodar
 
-> Comandos-alvo, a serem confirmados na S0 e fechados na S4. Versões sugeridas: Python 3.12+ e Node 20 LTS+.
+> Versões usadas: Python 3.12 e Node 22 (CI usa Node 20). Comandos abaixo foram executados neste repositório.
 
 Backend (em `backend/`):
 
@@ -44,21 +44,28 @@ npm install
 npm run dev
 ```
 
+Abra http://localhost:5173 e use **Carregar exemplos** no Painel para popular dados fictícios (locais, 5 inspeções, 9 fotos geradas por programa).
+
 Testes:
 
 ```
-pytest -q                     # em backend/
-npm test -- --run             # em frontend/
+pytest -q                     # em backend/ (199 testes)
+npm test -- --run             # em frontend/ (36 testes)
+npm run build                 # em frontend/
+npx playwright test           # em e2e/ (sobe API e Vite em portas próprias e salva telas em docs/evidencias/telas)
 ```
+
+Primeira vez no E2E: `cd e2e && npm install && npx playwright install chromium`. A variável `INSPECOES_HOJE=AAAA-MM-DD` fixa a data "de hoje" da API (usada no E2E).
 
 ## Estrutura de pastas (alvo)
 
 ```
 ├── README.md  HANDOFF_CLAUDE_CODE.md  CLAUDE.md  .gitignore
 ├── .github/workflows/ci.yml
-├── docs/        requisitos, critérios de aceite, ADRs, migração PostgreSQL, evidências
-├── backend/     app/ (routers, services, repositories, domain, models, schemas, storage), tests/
-└── frontend/    src/ (api, pages, components, hooks, utils, tests)
+├── docs/        evidências (testes, telas do Playwright, CSV exportado)
+├── backend/     app/ (routers, services, repositories, domain, models, schemas, storage, seed), tests/
+├── frontend/    src/ (api, pages, components, hooks, utils, tests)
+└── e2e/         Playwright (fluxo completo + geração de telas)
 ```
 
 ## Dados e backup
@@ -71,7 +78,7 @@ Login e perfis com permissão real, múltiplos usuários, nuvem ou sincronizaç�
 
 ## Migração futura para PostgreSQL
 
-O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATABASE_URL`, adotar Alembic, revisar os CHECKs e rodar a suíte de API em PostgreSQL no CI. Detalhes em `docs/migracao-postgresql.md` (a criar na M0).
+O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATABASE_URL`, adotar Alembic, revisar os CHECKs e rodar a suíte de API em PostgreSQL no CI. Os documentos de requisitos, ADRs e `docs/migracao-postgresql.md` (sprint M0) **ainda não foram escritos**; o escopo vale como está no handoff.
 
 ## Documentação
 

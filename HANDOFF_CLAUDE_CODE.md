@@ -184,12 +184,12 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 
 ## 10. Status das sprints (atualizar a cada entrega)
 
-- [ ] M0 — Documentação
+- [ ] M0 — Documentação (não feita: docs/requisitos.md, criterios-aceite.md, ADRs e migracao-postgresql.md ainda não existem)
 - [x] S0 — Estrutura, ambiente e Git
 - [x] S1 — Banco + API CRUD (A: inspeções/itens/locais [x] · B: fotos [x])
-- [ ] S2 — Frontend e integração (A: base/lista/nova/checklist · B: observações e fotos)
-- [ ] S3 — Dashboard com dados reais (+ exemplos e CSV)
-- [ ] S4 — Testes, correções, README e GitHub
+- [x] S2 — Frontend e integração (A: base/lista/nova/checklist · B: observações e fotos)
+- [x] S3 — Dashboard com dados reais (+ exemplos e CSV)
+- [~] S4 — Testes, correções, README e GitHub (suítes e E2E verdes, README atualizado; matriz CA01–CA73 completa e licença/P10 pendentes)
 
 Plano detalhado, prompts e verificações: `docs/PLANO_EXECUTAVEL.md`.
 

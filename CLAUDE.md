@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado atual do repositório
 
-Hoje existem **apenas dois documentos** (sem código, sem Git): `HANDOFF_CLAUDE_CODE.md` e `PLANO_EXECUTAVEL.md`. O projeto, "Inspeções Simuladas" (laboratório SEMA/MT, **dados 100% fictícios**), será construído por sprints (M0 → S0 → S1A → S1B → S2A → S2B → S3 → S4). O status das sprints está na seção 10 do handoff.
+"Inspeções Simuladas" (laboratório SEMA/MT, **dados 100% fictícios**). Backend (`backend/`), frontend (`frontend/`) e E2E (`e2e/`) estão implementados; faltam a documentação M0 (`docs/requisitos.md`, ADRs etc.) e a matriz CA01–CA73 da S4. O status das sprints está na seção 10 do handoff; evidências em `docs/evidencias/`.
 
 - `HANDOFF_CLAUDE_CODE.md` é a **fonte única de verdade** do escopo (entidades, RN01–RN34, endpoints, contrato de erro, CA01–CA73, seed, fora de escopo). O que não está nele está fora do escopo; dúvida de regra → seção 9 (Pendências P1–P11); se não estiver lá, perguntar antes de decidir.
 - `PLANO_EXECUTAVEL.md` traz, por sprint, objetivo, prompt, comandos de verificação, critérios de aceite e condição de parada. Os documentos referem `docs/PLANO_EXECUTAVEL.md` na estrutura alvo.
@@ -36,7 +36,7 @@ Hoje existem **apenas dois documentos** (sem código, sem Git): `HANDOFF_CLAUDE_
 - Numeração CA01–CA73 é estável; não renumerar.
 - Seed de testes é fixture (S1A); o endpoint `POST /utilitarios/carregar-exemplos` só existe na S3 (409 `BANCO_JA_POVOADO` se já houver dados).
 
-## Comandos (alvo; confirmar na S0 e fechar na S4)
+## Comandos (executados neste repositório)
 
 ```
 # backend/ (venv: python -m venv .venv; Windows: .venv\Scripts\activate)
@@ -50,6 +50,11 @@ pytest -q tests/api/test_health.py::nome    # um teste
 # frontend/
 npm install && npm run dev                  # porta 5173
 npm test -- --run && npm run build
+
+# e2e/ (sobe API na 8100 e Vite na 5180 com banco temporário; salva telas em docs/evidencias/telas)
+npx playwright test
 ```
+
+`INSPECOES_HOJE=AAAA-MM-DD` fixa a data "de hoje" da API (o relógio nos testes unitários é fixado por código). O modelo de checklist (6 itens) é criado na inicialização; os exemplos só entram por `POST /utilitarios/carregar-exemplos`.
 
 `.gitignore` obrigatório: `*.db`, `backend/data/`, `.env`, `venv/`, `.venv/`, `node_modules/`, `dist/`, `__pycache__/`. Mapa de pastas alvo na seção 14 do handoff.

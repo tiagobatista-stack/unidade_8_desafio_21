@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: { "/api": "http://127.0.0.1:8000" },
+    proxy: { "/api": process.env.API_URL ?? "http://127.0.0.1:8000" },
   },
   test: {
     environment: "jsdom",
