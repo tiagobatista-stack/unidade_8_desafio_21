@@ -152,7 +152,7 @@ O backend continua na máquina do usuário (`127.0.0.1:8000`); só o frontend es
    uvicorn app.main:app --host 127.0.0.1 --port 8000
    ```
 2. **Permissão no navegador:** no primeiro acesso, Chrome/Edge pedem permissão para o site acessar a rede local (é o acesso a `127.0.0.1`). É preciso **permitir**; se negar, o painel mostra "Não foi possível conectar à API." e a permissão pode ser refeita nas configurações do site. Firefox também funciona; Safari bloqueia.
-3. **Projeto na Vercel** (`unidade-8-desafio-21`, equipe `tiago-alexandre`): *Root Directory* `frontend`, preset Vite, variável `VITE_API_URL=http://127.0.0.1:8000` em Production e Preview (embutida no build; mudá-la exige novo deploy). O `frontend/vercel.json` define o build e redireciona as rotas para `index.html`. O deploy automático por push está desativado.
+3. **Projeto na Vercel** (`unidade-8-desafio-21`, equipe `tiago-alexandre`): *Root Directory* `frontend`, preset Vite, variável `VITE_API_URL=http://127.0.0.1:8000` em Production e Preview (embutida no build; mudá-la exige novo deploy). O `frontend/vercel.json` define o build e redireciona as rotas para `index.html`. **Cada push em `main` gera um deploy de produção** pela integração com o GitHub (conferido pelo histórico de deploys do projeto, `fonte = git`), mesmo com `createDeployments` aparecendo como `disabled` na API da Vercel.
 4. **Novo deploy** pela CLI, a partir da **raiz do repositório** (o Root Directory do projeto já é `frontend`): `npm i -g vercel`, `vercel login`, `vercel link` e `vercel deploy --prod`.
 
 Para testar um build em outra origem sem a Vercel: `VITE_API_URL=http://127.0.0.1:8000 npx vite build` e `npx vite preview --port 4173`, com `CORS_ORIGINS=http://localhost:4173` no backend.
@@ -200,7 +200,7 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 - **Banco existente:** migração automática e idempotente (veja [Atualizando um banco existente](#atualizando-um-banco-existente-migração)).
 - **Correções encontradas na verificação:** o rodapé do relatório cobria conteúdo no PDF (passou para as caixas de margem do `@page`); a tabela do checklist deixava linhas órfãs entre páginas; as fotos de exemplo saíam com quadrados no "Í" e no "—".
 - **Testes:** backend 229 → 334, frontend 59 → 124 e E2E 11 → 14 passos (mais PDFs do relatório). Os números subiram por causa dos testes novos; nenhum teste existente foi relaxado. Os que mudaram só refletem contrato novo (campo obrigatório, colunas do CSV, rótulos das datas).
-- **Vercel:** o deploy automático por push continua **desligado** no projeto; para publicar use `vercel deploy --prod` a partir da raiz (veja a seção da Vercel). `VITE_API_URL` aponta para `127.0.0.1`, então o site só funciona no computador onde o backend roda.
+- **Vercel:** cada push em `main` gera um deploy de produção (a integração com o GitHub está ativa; o push desta rodada gerou um deploy `READY`). Para publicar sem push use `vercel deploy --prod` a partir da raiz (veja a seção da Vercel). `VITE_API_URL` aponta para `127.0.0.1`, então o site só funciona no computador onde o backend roda.
 
 ## Pendências do projeto
 

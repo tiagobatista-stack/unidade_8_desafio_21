@@ -216,7 +216,7 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 - [x] S1 — Banco + API CRUD (A: inspeções/itens/locais [x] · B: fotos [x])
 - [x] S2 — Frontend e integração (A: base/lista/nova/checklist · B: observações e fotos)
 - [x] S3 — Dashboard com dados reais (+ exemplos e CSV)
-- [~] S4 — Testes, correções, README e GitHub (suítes, E2E e deploy do frontend feitos; faltam a matriz CA01–CA85 completa e a decisão de licença/P10)
+- [~] S4 — Testes, correções, README e GitHub (suítes, E2E e deploy do frontend feitos; faltam a matriz CA01–CA110 completa e a decisão de licença/P10)
 - [x] R1 — Rodada de melhorias pós-uso (23/10/2026): cartões clicáveis (RN37), botão/página Editar e `campos_editaveis` (RN38), número do processo (RN35, migração leve do banco), filtro por número, `status` repetível na lista e criação de local pela tela (RN36).
 - [x] R2 — Correções de usabilidade (A1–A5), dados do empreendimento (CAR e proprietários, tela Locais), cópia no fechamento e relatório de vistoria numerado e imprimível (RN39–RN46). A Parte B ficou só como opções (PB1–PB3).
 
