@@ -15,7 +15,18 @@ def instantaneo(local: Local) -> dict:
         "latitude": float(local.latitude),
         "longitude": float(local.longitude),
         "numero_car": local.numero_car,
-        "proprietarios": [{"nome": p.nome, "telefone": p.telefone} for p in local.proprietarios],
+        "logradouro": local.logradouro,
+        "uf": local.uf,
+        "cep": local.cep,
+        "proprietarios": [
+            {
+                "nome": p.nome, "telefone": p.telefone, "cpf_cnpj": p.cpf_cnpj,
+                "corr_logradouro": p.corr_logradouro, "corr_numero": p.corr_numero,
+                "corr_complemento": p.corr_complemento, "corr_bairro": p.corr_bairro,
+                "corr_municipio": p.corr_municipio, "corr_uf": p.corr_uf, "corr_cep": p.corr_cep,
+            }
+            for p in local.proprietarios
+        ],
     }
 
 

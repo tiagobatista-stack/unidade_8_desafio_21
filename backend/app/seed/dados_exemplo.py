@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.constantes import Origem, Situacao, Status
 from app.domain.resultado import calcular_resultado
-from app.models import Inspecao, ItemInspecao, Local, Proprietario
+from app.models import AtoLavrado, EquipeMembro, Inspecao, ItemInspecao, Local, Proprietario
 from app.seed.modelo import garantir_modelo
 from app.services import empreendimento_service, numeracao_service
 
@@ -25,6 +25,35 @@ PROPRIETARIOS_EXEMPLO = [
     [("Proprietário Fictício Quatro", None)],
 ]
 
+# R4: endereço do empreendimento (logradouro, CEP) e dados do responsável, todos fictícios.
+# CPF/CNPJ de exemplo com dígitos verificadores válidos; CEPs inventados.
+ENDERECO_EXEMPLO = [
+    ("Zona Rural, aos fundos da Fazenda Horizonte Azul", "78320000"),
+    ("Rodovia MT-000, km 12, Distrito Industrial", "78320001"),
+    ("Avenida Principal, s/n, Centro", "78320002"),
+    ("Zona Rural, Gleba Mata Ciliar", "78320003"),
+]
+DOCUMENTOS_EXEMPLO = [["52998224725", None], ["11222333000181"], [], [None]]
+# Responsável Um: correspondência própria; Responsável Dois: "mesmo endereço do empreendimento".
+CORRESPONDENCIA_EXEMPLO = {
+    (0, 0): dict(
+        corr_logradouro="Rua das Palmeiras", corr_numero="123", corr_complemento="Sala 2", corr_bairro="Centro",
+        corr_municipio="Vila Nova do Cerrado", corr_uf="MT", corr_cep="78320010",
+    ),
+}
+
+INTERESSADO_MP = dict(
+    interessado_orgao="Ministério Público do Estado de Mato Grosso",
+    interessado_unidade="1ª Promotoria de Justiça Cível",
+    interessado_comarca="Comarca de Juína",
+    interessado_requerente="Promotor de Justiça",
+)
+ASSUNTO_EXEMPLO = "Vistoria de Constatação – Fiscalização Ambiental"
+EQUIPE_EXEMPLO = [
+    ("Analista Fictício Um", "Engenheiro Florestal", "SEMA-MT / Superintendência de Fiscalização"),
+    ("Analista Fictícia Dois", "Técnica Ambiental", "SEMA-MT / Superintendência de Fiscalização"),
+]
+
 OBS_VISTORIA = {
     1: "Propriedade em boas condições gerais. Documentação apresentada pelo responsável fictício no ato da vistoria. Sem pendências visíveis.",
     2: "Pátio com acúmulo moderado de serragem junto ao galpão. Placas de segurança parcialmente desgastadas. Registro de manejo com atualização atrasada.",
@@ -37,6 +66,15 @@ OBS_ITEM_NC = {
     (2, 4): "Placas de segurança com tinta desgastada na entrada do galpão.",
     (2, 5): "Último registro de manejo datado de meses antes da vistoria.",
     (3, 6): "Caixa separadora com sinais de transbordamento e resíduo oleoso no solo.",
+}
+
+PROVIDENCIAS = {
+    2: "Lavrados notificação e auto de infração pelo acúmulo de resíduo e pela sinalização deficiente (exemplo fictício).",
+    3: "Notificado o responsável para sanar o transbordamento da caixa separadora (exemplo fictício).",
+}
+ATOS = {
+    2: [("Notificação", "NOT-0001/2026"), ("Auto de Infração", None)],
+    3: [("Notificação", None)],
 }
 
 CONFORME = Situacao.CONFORME
@@ -72,6 +110,17 @@ def carregar(db: Session) -> list[Inspecao]:
         )
         for k, (n, m, t, la, lo) in enumerate(LOCAIS)
     ]
+    for k, local in enumerate(locais):
+        local.logradouro, local.cep = ENDERECO_EXEMPLO[k]
+        local.uf = "MT"
+        for ordem, prop in enumerate(local.proprietarios):
+            docs = DOCUMENTOS_EXEMPLO[k]
+            prop.cpf_cnpj = docs[ordem] if ordem < len(docs) else None
+            corr = CORRESPONDENCIA_EXEMPLO.get((k, ordem))
+            if corr is None and k == 0 and ordem == 1:  # "mesmo endereço do empreendimento"
+                corr = dict(corr_logradouro=local.logradouro, corr_municipio=local.municipio, corr_uf="MT", corr_cep=local.cep)
+            for campo, valor in (corr or {}).items():
+                setattr(prop, campo, valor)
     modelo = garantir_modelo(db)
     db.add_all(locais)
     db.flush()
@@ -87,6 +136,14 @@ def carregar(db: Session) -> list[Inspecao]:
             observacoes_vistoria=OBS_VISTORIA[numero],
             data_agendamento=agend,
             data_realizacao=real,
+            assunto_tipo=ASSUNTO_EXEMPLO,
+            providencias_texto=PROVIDENCIAS.get(numero),
+            **(INTERESSADO_MP if numero in (1, 2) else {}),  # as demais são demandas internas (sem interessado)
+            equipe=[
+                EquipeMembro(nome=n, cargo=c, orgao=o, ordem=i)
+                for i, (n, c, o) in enumerate(EQUIPE_EXEMPLO[: 2 if numero in (1, 2) else 1])
+            ],
+            atos=[AtoLavrado(tipo=t, numero=num, ordem=i) for i, (t, num) in enumerate(ATOS.get(numero, []))],
             status=status,
             criado_em=criado,
             atualizado_em=criado,

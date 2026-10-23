@@ -19,6 +19,10 @@ class Local(Base):
     latitude: Mapped[float] = mapped_column(Numeric(8, 5, asdecimal=False), nullable=False)
     longitude: Mapped[float] = mapped_column(Numeric(8, 5, asdecimal=False), nullable=False)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # R4: endereço do empreendimento (o município é o campo `municipio` já existente)
+    logradouro: Mapped[str | None] = mapped_column(String(200))
+    uf: Mapped[str | None] = mapped_column(String(2))
+    cep: Mapped[str | None] = mapped_column(String(8))  # só dígitos
     numero_car: Mapped[str | None] = mapped_column(String(60))  # Cadastro Ambiental Rural, opcional
     proprietarios = relationship(
         "Proprietario",

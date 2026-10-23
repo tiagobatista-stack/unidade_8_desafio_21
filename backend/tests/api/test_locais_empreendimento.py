@@ -32,7 +32,8 @@ def test_criar_com_car_e_proprietarios(api, engine):
     assert r.status_code == 201, r.text
     d = r.json()
     assert d["numero_car"] == "MT-5107925-ABC123"
-    assert d["proprietarios"] == [
+    campos = ("nome", "telefone", "telefone_formatado")  # os campos da R4 têm testes próprios
+    assert [{k: p[k] for k in campos} for p in d["proprietarios"]] == [
         {"nome": "Fulano Fictício", "telefone": "65900000001", "telefone_formatado": "(65) 90000-0001"},
         {"nome": "Beltrana Fictícia", "telefone": None, "telefone_formatado": None},
         {"nome": "Sicrano Fictício", "telefone": None, "telefone_formatado": None},

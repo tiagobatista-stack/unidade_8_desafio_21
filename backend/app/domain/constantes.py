@@ -39,3 +39,31 @@ MAX_MUNICIPIO = 80
 MAX_TIPO_LOCAL = 40
 MAX_OBSERVACOES = 2000
 MAX_NUMERO_PROCESSO = 60
+
+# R4: capa da SEMA e lavratura
+MAX_INTERESSADO = 120
+MAX_COMARCA = 80
+MAX_ASSUNTO_OUTRO = 120
+MAX_PROVIDENCIAS = 2000
+MAX_NUMERO_RELATORIO_SEMA = 40
+MAX_MEMBRO_CAMPO = 120
+MAX_EQUIPE = 20
+MAX_ATOS = 30
+MAX_NUMERO_ATO = 40
+MAX_LOGRADOURO = 200
+MAX_ENDERECO_CAMPO = 80
+MAX_NUMERO_ENDERECO = 20
+
+ASSUNTO_OUTRO = "Outro"
+ASSUNTOS = (
+    "Vistoria de Constatação – Fiscalização Ambiental",
+    "Atendimento a Denúncia",
+    "Vistoria de Embargo",
+    "Vistoria Técnica – Licenciamento",
+    "Acompanhamento de Recuperação de Área",
+    ASSUNTO_OUTRO,
+)
+TIPOS_ATO = (
+    "Notificação", "Auto de Infração", "Termo de Embargo", "Termo de Apreensão", "Termo de Depósito", "Outro",
+)
+INTERESSADO_PADRAO = "Demanda interna / de ofício"

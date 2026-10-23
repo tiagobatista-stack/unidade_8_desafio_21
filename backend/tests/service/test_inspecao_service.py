@@ -4,13 +4,14 @@ import pytest
 
 from app.errors import ErroNegocio
 from app.models import Inspecao
-from app.schemas.inspecao import InspecaoIn, InspecaoPatch, ItemIn, ItemPatch
+from app.schemas.inspecao import InspecaoIn, MembroIn, InspecaoPatch, ItemIn, ItemPatch
 from app.services import inspecao_service as svc
 from app.services import item_service as itens
 
 
 def nova(db, **kw):
-    base = dict(numero_processo="SEMA-PRO-2026/12345", local_id=1, data_agendamento=date(2026, 10, 20), objetivo="Vistoria")
+    base = dict(numero_processo="SEMA-PRO-2026/12345", local_id=1, data_agendamento=date(2026, 10, 20), objetivo="Vistoria",
+                equipe=[MembroIn(nome="Analista Fictício")])
     base.update(kw)
     return svc.criar(db, InspecaoIn(**base))
 

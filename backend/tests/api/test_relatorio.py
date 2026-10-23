@@ -17,7 +17,7 @@ def api(client, exemplos):
 
 def nova(api, local_id=1, agendamento="2026-10-20"):
     r = api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": local_id,
-                                            "data_agendamento": agendamento, "objetivo": "Objetivo de teste"})
+                                            "data_agendamento": agendamento, "objetivo": "Objetivo de teste", "equipe": [{"nome": "Analista Fictício"}]})
     assert r.status_code == 201, r.text
     return r.json()
 

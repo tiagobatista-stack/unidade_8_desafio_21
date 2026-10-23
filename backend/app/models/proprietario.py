@@ -17,4 +17,13 @@ class Proprietario(Base):
     local_id: Mapped[int] = mapped_column(ForeignKey("local.id", ondelete="CASCADE"), nullable=False)
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
     telefone: Mapped[str | None] = mapped_column(String(11))  # só dígitos
+    cpf_cnpj: Mapped[str | None] = mapped_column(String(14))  # só dígitos (11 = CPF, 14 = CNPJ)
+    # Endereço para correspondência (R4)
+    corr_logradouro: Mapped[str | None] = mapped_column(String(200))
+    corr_numero: Mapped[str | None] = mapped_column(String(20))
+    corr_complemento: Mapped[str | None] = mapped_column(String(80))
+    corr_bairro: Mapped[str | None] = mapped_column(String(80))
+    corr_municipio: Mapped[str | None] = mapped_column(String(80))
+    corr_uf: Mapped[str | None] = mapped_column(String(2))
+    corr_cep: Mapped[str | None] = mapped_column(String(8))
     ordem: Mapped[int] = mapped_column(Integer, nullable=False)

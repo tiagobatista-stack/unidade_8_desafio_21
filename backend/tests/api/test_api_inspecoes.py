@@ -23,7 +23,7 @@ def api(client, exemplos):
 
 
 def nova_payload(**kw):
-    base = {"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "Vistoria de rotina"}
+    base = {"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "Vistoria de rotina", "equipe": [{"nome": "Analista Fictício"}]}
     base.update(kw)
     return base
 

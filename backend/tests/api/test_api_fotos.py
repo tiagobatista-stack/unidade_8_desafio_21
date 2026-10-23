@@ -185,7 +185,7 @@ def test_lista_mostra_qtd_fotos_e_detalhe_traz_fotos(api):  # CA58 (parcial)
 
 
 def test_fechar_sem_fotos_permitido(api):  # CA59
-    d = api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "x"}).json()
+    d = api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "x", "equipe": [{"nome": "Analista Fictício"}]}).json()
     for it in d["itens"]:
         api.patch(f"{BASE}/inspecoes/{d['id']}/itens/{it['id']}", json={"situacao": "CONFORME"})
     assert api.post(f"{BASE}/inspecoes/{d['id']}/fechar").status_code == 200
@@ -248,7 +248,7 @@ def test_nome_com_caminho_nunca_vira_caminho_em_disco(api):
 def test_anotacao_nao_altera_resultado(api):  # CA72
     antes = api.get(f"{BASE}/inspecoes/3").json()
     assert antes["resultado"] == "REPROVADA"
-    novo = api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "x"}).json()
+    novo = api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "x", "equipe": [{"nome": "Analista Fictício"}]}).json()
     for it in novo["itens"]:
         sit = "NAO_CONFORME" if it["ordem"] == 6 else "CONFORME"
         body = {"situacao": sit, **({"observacao": "irregular"} if sit == "NAO_CONFORME" else {})}
