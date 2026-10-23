@@ -10,7 +10,7 @@ from app.services import item_service as itens
 
 
 def nova(db, **kw):
-    base = dict(local_id=1, data_agendamento=date(2026, 10, 20), objetivo="Vistoria")
+    base = dict(numero_processo="SEMA-PRO-2026/12345", local_id=1, data_agendamento=date(2026, 10, 20), objetivo="Vistoria")
     base.update(kw)
     return svc.criar(db, InspecaoIn(**base))
 

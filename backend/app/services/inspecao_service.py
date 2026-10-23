@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app import clock
 from app.domain.constantes import (
     MAX_MOTIVO_CANCELAMENTO,
+    MAX_NUMERO_PROCESSO,
     MAX_OBJETIVO,
     MAX_OBSERVACOES,
     MAX_OBSERVACOES_VISTORIA,
@@ -24,9 +25,10 @@ from app.repositories import local_repository
 from app.schemas.inspecao import InspecaoIn, InspecaoPatch
 
 # RN14: campos editáveis por status
+# O número do processo é corrigível enquanto a inspeção não for encerrada (acréscimo ao RN14 original).
 CAMPOS_EDITAVEIS = {
-    Status.ABERTA: {"local_id", "data_agendamento", "objetivo", "observacoes", "observacoes_vistoria"},
-    Status.EM_ANDAMENTO: {"data_realizacao", "observacoes", "observacoes_vistoria"},
+    Status.ABERTA: {"numero_processo", "local_id", "data_agendamento", "objetivo", "observacoes", "observacoes_vistoria"},
+    Status.EM_ANDAMENTO: {"numero_processo", "data_realizacao", "observacoes", "observacoes_vistoria"},
 }
 
 
@@ -60,6 +62,7 @@ def detalhe(inspecao: Inspecao) -> dict:
     return {
         **{c.key: getattr(inspecao, c.key) for c in Inspecao.__table__.columns},
         "local": inspecao.local, "itens": itens, "fotos": [foto_dict(f) for f in inspecao.fotos],
+        "campos_editaveis": sorted(CAMPOS_EDITAVEIS.get(inspecao.status, set())),
         "resumo_itens": resumo_itens(inspecao),
     }
 
@@ -73,6 +76,7 @@ def _local_valido(db: Session, local_id: int):
 
 def criar(db: Session, dados: InspecaoIn) -> Inspecao:
     _local_valido(db, dados.local_id)
+    numero_processo = sanear(dados.numero_processo, "numero_processo", MAX_NUMERO_PROCESSO, obrigatorio=True)
     objetivo = sanear(dados.objetivo, "objetivo", MAX_OBJETIVO, obrigatorio=True)
     observacoes = sanear(dados.observacoes, "observacoes", MAX_OBSERVACOES)
     obs_vistoria = sanear(dados.observacoes_vistoria, "observacoes_vistoria", MAX_OBSERVACOES_VISTORIA)
@@ -82,6 +86,7 @@ def criar(db: Session, dados: InspecaoIn) -> Inspecao:
     agora = clock.agora()
     inspecao = Inspecao(
         codigo=f"TMP-{uuid.uuid4().hex[:12]}",
+        numero_processo=numero_processo,
         local_id=dados.local_id,
         objetivo=objetivo,
         observacoes=observacoes,
@@ -105,10 +110,10 @@ def criar(db: Session, dados: InspecaoIn) -> Inspecao:
     return inspecao
 
 
-def listar(db: Session, status, data_inicio, data_fim, local_id, pagina: int, tamanho: int):
+def listar(db: Session, status, data_inicio, data_fim, local_id, numero_processo, pagina: int, tamanho: int):
     if data_inicio and data_fim and data_inicio > data_fim:
         raise erro_campo("data_inicio", "Deve ser anterior ou igual a data_fim.")
-    return repo.listar(db, status, data_inicio, data_fim, local_id, pagina, tamanho)
+    return repo.listar(db, status, data_inicio, data_fim, local_id, numero_processo, pagina, tamanho)
 
 
 def editar(db: Session, inspecao_id: int, dados: InspecaoPatch) -> Inspecao:
@@ -125,6 +130,10 @@ def editar(db: Session, inspecao_id: int, dados: InspecaoPatch) -> Inspecao:
         )
 
     novos: dict = {}
+    if "numero_processo" in enviados:
+        novos["numero_processo"] = sanear(
+            dados.numero_processo, "numero_processo", MAX_NUMERO_PROCESSO, obrigatorio=True
+        )
     if "local_id" in enviados:
         if dados.local_id is None:
             raise erro_campo("local_id", "Campo obrigatório.")

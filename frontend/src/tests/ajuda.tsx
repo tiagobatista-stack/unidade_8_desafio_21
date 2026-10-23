@@ -83,10 +83,18 @@ export function foto(id: number, parcial: Partial<Foto> = {}): Foto {
   };
 }
 
+/** Espelha o que a API devolve em `campos_editaveis` por status. */
+const EDITAVEIS: Record<string, string[]> = {
+  ABERTA: ["data_agendamento", "local_id", "numero_processo", "objetivo", "observacoes", "observacoes_vistoria"],
+  EM_ANDAMENTO: ["data_realizacao", "numero_processo", "observacoes", "observacoes_vistoria"],
+  FINALIZADA: [],
+  CANCELADA: [],
+};
+
 export function inspecao(parcial: Partial<InspecaoDetalhe> = {}): InspecaoDetalhe {
   const itens = parcial.itens ?? [item(1), item(2), item(3)];
   return {
-    id: 4, codigo: "INS-004", local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
+    id: 4, codigo: "INS-004", numero_processo: "SEMA-PRO-2026/12345", campos_editaveis: EDITAVEIS[parcial.status ?? "ABERTA"], local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
     data_agendamento: "2026-10-20", data_realizacao: null, status: "ABERTA", resultado: null, motivo_cancelamento: null,
     fechado_em: null, itens, fotos: [],
     resumo_itens: { total: itens.length, respondidos: itens.filter((i) => i.situacao !== "NAO_RESPONDIDO").length, nao_conformes: itens.filter((i) => i.situacao === "NAO_CONFORME").length },
@@ -96,7 +104,7 @@ export function inspecao(parcial: Partial<InspecaoDetalhe> = {}): InspecaoDetalh
 
 export function resumo(id: number, parcial: Partial<InspecaoResumo> = {}): InspecaoResumo {
   return {
-    id, codigo: `INS-00${id}`, local: { id: 1, nome: "Fazenda Horizonte Azul", municipio: "Vila Nova do Cerrado" }, objetivo: "x",
+    id, codigo: `INS-00${id}`, numero_processo: `SEMA-PRO-2026/1000${id}`, local: { id: 1, nome: "Fazenda Horizonte Azul", municipio: "Vila Nova do Cerrado" }, objetivo: "x",
     data_agendamento: "2026-10-20", data_realizacao: null, status: "ABERTA", resultado: null, qtd_fotos: 0, ...parcial,
   };
 }

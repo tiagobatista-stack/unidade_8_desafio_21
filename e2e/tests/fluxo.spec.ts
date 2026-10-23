@@ -65,24 +65,100 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await irPara(page, "Painel");
     await page.getByRole("link", { name: "Ver pendências" }).click();
     await expect(page.getByRole("row")).toHaveCount(3);
-    await expect(page.getByRole("link", { name: "INS-004" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "INS-005" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "INS-004", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "INS-005", exact: true })).toBeVisible();
     await tela(page, "lista-pendencias");
+  });
+
+  test("contadores do painel listam cada categoria", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("indicador-pendencias").click();
+    await expect(page.getByTestId("filtro-ativo")).toContainText("Pendências");
+    await expect(page.getByRole("row")).toHaveCount(3); // INS-004 e INS-005
+    await tela(page, "painel-clique-pendencias");
+    await irPara(page, "Painel");
+    await page.getByTestId("indicador-finalizadas").click();
+    await expect(page.getByRole("row")).toHaveCount(4); // INS-001..003
+    await expect(page.getByRole("link", { name: "INS-001", exact: true })).toBeVisible();
+    await tela(page, "painel-clique-finalizadas");
+    await irPara(page, "Painel");
+    await page.getByTestId("indicador-inspecoes").click();
+    await expect(page.getByRole("row")).toHaveCount(6); // todas, exceto canceladas (hoje nenhuma)
+    await expect(page.getByTestId("filtro-ativo")).toContainText("5 inspeção(ões)");
+    await tela(page, "painel-clique-inspecoes");
+  });
+
+  test("editar inspeção, número do processo e busca", async ({ page }) => {
+    await page.goto("/inspecoes");
+    await expect(page.getByRole("link", { name: "Editar INS-001" })).toHaveCount(0); // finalizada: sem botão
+    await expect(page.getByRole("cell", { name: "SEMA-PRO-2026/10005" })).toBeVisible();
+    await page.getByRole("link", { name: "Editar INS-005" }).click();
+    await expect(page.getByRole("heading", { name: "Editar INS-005" })).toBeVisible();
+    await expect(page.getByLabel("Data de agendamento")).toBeEnabled(); // Aberta: agendamento editável
+    await expect(page.getByLabel("Data de realização")).toHaveCount(0); // bloqueada nesse status
+    await page.getByLabel("Número do processo").fill("");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await expect(page.getByRole("alert")).toContainText("Campo obrigatório");
+    await tela(page, "editar-aberta-erro-processo-obrigatorio");
+    await page.getByLabel("Número do processo").fill("SEMA-PRO-2026/20005");
+    await page.getByLabel("Objetivo").fill("Vistoria reagendada pelo processo 20005");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await expect(page.getByRole("heading", { name: "INS-005" })).toBeVisible();
+    await expect(page.getByTestId("numero-processo")).toHaveText("SEMA-PRO-2026/20005");
+    await expect(page.getByText("Vistoria reagendada pelo processo 20005")).toBeVisible();
+    await tela(page, "detalhe-apos-editar");
+    // Em andamento: agendamento e local viram texto; processo continua editável
+    await page.goto("/inspecoes");
+    await page.getByRole("link", { name: "Editar INS-004" }).click();
+    await expect(page.getByLabel("Data de realização")).toBeEnabled();
+    await expect(page.getByLabel("Data de agendamento")).toHaveCount(0);
+    await expect(page.getByTestId("leitura-data_agendamento")).toHaveText("20/10/2026");
+    await tela(page, "editar-em-andamento-campos-bloqueados");
+    // finalizada: a rota existe mas nada é editável
+    await page.goto("/inspecoes");
+    await page.getByRole("link", { name: "INS-001", exact: true }).click();
+    await expect(page.getByRole("link", { name: "Editar inspeção" })).toHaveCount(0);
+    // busca por número do processo
+    await page.goto("/inspecoes");
+    await page.getByLabel("Buscar por número do processo").fill("20005");
+    await expect(page.getByRole("row")).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "INS-005", exact: true })).toBeVisible();
+    await tela(page, "lista-busca-por-processo");
+    await page.getByLabel("Buscar por número do processo").fill("sema-pro-2026/1000");
+    await expect(page.getByRole("row")).toHaveCount(5); // 001..004 (005 mudou para 20005)
   });
 
   test("nova inspeção e cancelamento com motivo", async ({ page }) => {
     await page.goto("/inspecoes/nova");
     await page.getByRole("button", { name: "Cadastrar inspeção" }).click();
     await expect(page.getByText("Selecione um local.")).toBeVisible();
+    await expect(page.getByText("Informe o número do processo.")).toBeVisible();
     await tela(page, "nova-inspecao-campos-obrigatorios");
-    await page.getByLabel("Local").selectOption({ label: "Posto Rio Claro — São Tomé do Norte" });
-    await expect(page.getByLabel("Latitude")).toHaveValue("-9.71234");
+    // novo local: coordenada fora de MT é recusada, corrigida e o local já vem selecionado
+    await page.getByRole("button", { name: "+ Novo local" }).click();
+    await page.getByLabel("Nome do local").fill("Frigorífico Boa Terra (fictício)");
+    await page.getByLabel("Município do local").fill("Sinop");
+    await page.getByLabel("Tipo do local").fill("Indústria alimentícia");
+    await page.getByLabel("Latitude do local").fill("-25");
+    await page.getByLabel("Longitude do local").fill("-55,5");
+    await page.getByRole("button", { name: "Salvar local" }).click();
+    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("Coordenada fora de Mato Grosso");
+    await tela(page, "novo-local-coordenada-fora-de-mt");
+    await page.getByLabel("Latitude do local").fill("-11,85");
+    await page.getByRole("button", { name: "Salvar local" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByLabel("Local")).toHaveValue(/\d+/);
+    await expect(page.getByLabel("Local").locator("option:checked")).toHaveText("Frigorífico Boa Terra (fictício) — Sinop");
+    await expect(page.getByLabel("Latitude")).toHaveValue("-11.85");
+    await page.getByLabel("Número do processo").fill("SEMA-PRO-2026/12345");
     await page.getByLabel("Data de agendamento").fill("2026-10-30");
     await page.getByLabel("Objetivo").fill("Verificação de rotina do posto (exemplo fictício)");
     await tela(page, "nova-inspecao-preenchida");
     await page.getByRole("button", { name: "Cadastrar inspeção" }).click();
     await expect(page.getByRole("heading", { name: "INS-006" })).toBeVisible();
     await expect(page.getByTestId(/^item-/)).toHaveCount(6);
+    await expect(page.getByTestId("numero-processo")).toHaveText("SEMA-PRO-2026/12345");
+    await expect(page.getByText("Frigorífico Boa Terra (fictício) — Sinop")).toBeVisible();
     await tela(page, "detalhe-inspecao-aberta");
     await page.getByRole("button", { name: "Cancelar inspeção" }).click();
     await page.getByLabel("Motivo do cancelamento").fill("Responsável indisponível na data");
@@ -98,7 +174,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
 
   test("INS-005: registrar item em vistoria agendada para o futuro é bloqueado (P1)", async ({ page }) => {
     await page.goto("/inspecoes");
-    await page.getByRole("link", { name: "INS-005" }).click();
+    await page.getByRole("link", { name: "INS-005", exact: true }).click();
     await page.getByLabel(/^Situação de Licença/).selectOption("CONFORME");
     await expect(page.getByRole("alert")).toContainText("Vistoria agendada para 28/10/2026");
     await expect(page.getByText("Aberta").first()).toBeVisible();
@@ -107,7 +183,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
 
   test("INS-004: fechamento bloqueado destaca os itens pendentes", async ({ page }) => {
     await page.goto("/inspecoes");
-    await page.getByRole("link", { name: "INS-004" }).click();
+    await page.getByRole("link", { name: "INS-004", exact: true }).click();
     await expect(page.getByRole("heading", { name: "INS-004" })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Fotos da vistoria \(2\)/ })).toBeVisible();
     await tela(page, "detalhe-em-andamento-com-fotos");
@@ -122,7 +198,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
 
   test("INS-004: fotos com anotação obrigatória, falha parcial e visualizador", async ({ page }) => {
     await page.goto("/inspecoes");
-    await page.getByRole("link", { name: "INS-004" }).click();
+    await page.getByRole("link", { name: "INS-004", exact: true }).click();
     await page.getByLabel("Selecionar fotos").setInputFiles([
       path.join(imgs, "ficticia1.jpg"), path.join(imgs, "ficticia2.png"), path.join(imgs, "texto.jpg"),
     ]);
@@ -155,7 +231,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
 
   test("INS-004: responder itens, observações da vistoria e fechar (1 pendência, 4 finalizadas)", async ({ page }) => {
     await page.goto("/inspecoes");
-    await page.getByRole("link", { name: "INS-004" }).click();
+    await page.getByRole("link", { name: "INS-004", exact: true }).click();
     for (const nome of [/^Situação de Sinalização/, /^Situação de Registro/, /^Situação de Destinação/]) {
       const select = page.getByLabel(nome);
       await select.selectOption("CONFORME");
@@ -181,7 +257,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
 
   test("INS-003 reprovada em somente leitura e layout estreito", async ({ page }) => {
     await page.goto("/inspecoes");
-    await page.getByRole("link", { name: "INS-003" }).click();
+    await page.getByRole("link", { name: "INS-003", exact: true }).click();
     await expect(page.locator("dt", { hasText: /^Resultado$/ }).locator("..")).toContainText("Reprovada");
     await expect(page.getByLabel("Selecionar fotos")).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -195,9 +271,9 @@ test.describe.serial("Fluxo completo do MVP", () => {
     const csv = await request.get(`${API}/exportacao/inspecoes.csv`);
     const texto = (await csv.text()).replace(/^﻿/, "");
     const linhas = texto.trim().split("\r\n");
-    expect(linhas[0]).toBe("codigo;local;latitude;longitude;data_agendamento;data_realizacao;status;resultado;observacoes_vistoria;qtd_fotos");
+    expect(linhas[0]).toBe("codigo;numero_processo;local;latitude;longitude;data_agendamento;data_realizacao;status;resultado;observacoes_vistoria;qtd_fotos");
     expect(linhas.some((l) => l.startsWith("INS-006;") && l.includes(";CANCELADA;"))).toBe(true);
-    expect(linhas.find((l) => l.startsWith("INS-004;"))).toMatch(/;FINALIZADA;APROVADA;"?Trecho sul percorrido\.[\s\S]*;4$/);
+    expect(linhas.find((l) => l.startsWith("INS-004;SEMA-PRO-2026/10004;"))).toMatch(/;FINALIZADA;APROVADA;"?Trecho sul percorrido\.[\s\S]*;4$/);
     writeFileSync(path.join(raiz, "docs", "evidencias", "exportacao-e2e.csv"), texto, "utf-8");
     const verif = await (await request.get(`${API}/utilitarios/verificar-fotos`)).json();
     expect(verif.total_inconsistencias).toBe(0);

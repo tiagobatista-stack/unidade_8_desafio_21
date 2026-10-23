@@ -5,12 +5,19 @@ import { paraErro } from "../api/cliente";
 import { Carregando, MensagemErro, Modal } from "../components/Basicos";
 import { useIndicadores, useInvalidarTudo } from "../hooks/useDados";
 
-function Cartao({ id, titulo, valor }: { id: string; titulo: string; valor: number }) {
+/** Cada cartão leva à lista da própria categoria (os grupos são resolvidos em InspecoesPage). */
+function Cartao({ id, titulo, valor, filtro }: { id: string; titulo: string; valor: number; filtro: string }) {
   return (
-    <div className="indicador" data-testid={`indicador-${id}`}>
+    <Link
+      className="indicador"
+      data-testid={`indicador-${id}`}
+      to={`/inspecoes?status=${filtro}`}
+      aria-label={`${titulo}: ${valor}. Ver lista`}
+    >
       <span className="indicador-valor">{valor}</span>
       <span className="indicador-titulo">{titulo}</span>
-    </div>
+      <span className="indicador-acao">Ver lista →</span>
+    </Link>
   );
 }
 
@@ -44,9 +51,9 @@ export default function PainelPage() {
       <MensagemErro erro={error} />
       {data && (
         <div className="indicadores">
-          <Cartao id="inspecoes" titulo="Inspeções" valor={data.inspecoes} />
-          <Cartao id="pendencias" titulo="Pendências" valor={data.pendencias} />
-          <Cartao id="finalizadas" titulo="Finalizadas" valor={data.finalizadas} />
+          <Cartao id="inspecoes" titulo="Inspeções" valor={data.inspecoes} filtro="ATIVAS" />
+          <Cartao id="pendencias" titulo="Pendências" valor={data.pendencias} filtro="PENDENTES" />
+          <Cartao id="finalizadas" titulo="Finalizadas" valor={data.finalizadas} filtro="FINALIZADA" />
         </div>
       )}
       <div className="acoes">

@@ -10,12 +10,15 @@ Ferramenta **local, para um único usuário**, que simula o fluxo de inspeções
 
 ## Funcionalidades
 
-- Cadastro de inspeção (local, data de agendamento, objetivo, observações), com código sequencial `INS-NNN` e checklist de 6 itens copiado do modelo (3 críticos).
+- Cadastro de inspeção (**número do processo**, local, data de agendamento, objetivo, observações), com código sequencial `INS-NNN` e checklist de 6 itens copiado do modelo (3 críticos). O número do processo é obrigatório e de texto livre (ex.: `SEMA-PRO-2026/12345`).
+- **Novo local pela própria tela de nova inspeção** (nome, município, tipo, latitude e longitude dentro de Mato Grosso); o local criado já fica selecionado.
+- **Editar inspeção** (botão na lista e no detalhe) apenas nos campos permitidos pelo status: Aberta (processo, local, agendamento, objetivo, observações) e Em andamento (processo, data de realização, observações).
 - Registro da situação de cada item (Conforme, Não conforme, Não se aplica), com item avulso opcional. Item não conforme exige observação para fechar.
 - Observações da vistoria (até 2000 caracteres) e fotos (JPEG, PNG ou WebP, até 5 MB, no máximo 20 por inspeção), cada uma com **anotação obrigatória**. O tipo é validado pelo conteúdo, o EXIF/GPS é removido e é gerada miniatura de 320 px.
 - Fechamento com resultado calculado: **Reprovada** se algum item crítico for não conforme, **Aprovada com ressalvas** se houver outro item não conforme, **Aprovada** nos demais casos. Fechamento bloqueado lista cada item pendente.
 - Cancelamento com motivo (somente inspeções Abertas). Inspeções finalizadas ou canceladas ficam somente leitura.
-- Painel com três indicadores (**Inspeções**, **Pendências**, **Finalizadas**), carga de dados de exemplo (5 inspeções, 9 fotos fictícias) e exportação CSV.
+- Painel com três indicadores (**Inspeções**, **Pendências**, **Finalizadas**) **clicáveis**: cada um abre a lista da categoria (Inspeções exclui as canceladas). A lista tem filtros de status e período, **busca por número do processo** e mostra o filtro ativo.
+- Carga de dados de exemplo (5 inspeções com números de processo fictícios e 9 fotos) e exportação CSV (inclui `numero_processo`).
 
 Regra importante (decisão P1 do handoff): registrar o primeiro item de uma inspeção agendada para o futuro é **bloqueado** (422) até a data do agendamento ou até reagendar a inspeção.
 
@@ -72,9 +75,9 @@ Na primeira execução ele cria `backend/data/inspecoes.db` e o modelo de checkl
 npm run dev
 ```
 
-**3. Usar:** abra http://localhost:5173. Num banco novo não há locais; clique em **Carregar exemplos** no Painel para criar 4 locais, 5 inspeções e 9 fotos fictícias (o Painel passa a mostrar 5 / 2 / 3). A carga só é aceita em banco sem dados.
+**3. Usar:** abra http://localhost:5173. Num banco novo não há locais: crie um em **Nova inspeção → + Novo local** ou clique em **Carregar exemplos** no Painel para criar 4 locais, 5 inspeções e 9 fotos fictícias (o Painel passa a mostrar 5 / 2 / 3). A carga só é aceita em banco sem dados.
 
-Fluxo típico: **Nova inspeção** → abrir a inspeção → responder o checklist (a inspeção passa a Em andamento) → registrar observações e fotos com anotação → **Fechar inspeção** (o resultado é calculado) ou **Cancelar** (somente Aberta). **Exportar CSV** no Painel baixa todas as inspeções.
+Fluxo típico: **Nova inspeção** (informe o número do processo) → abrir a inspeção → responder o checklist (a inspeção passa a Em andamento) → registrar observações e fotos com anotação → **Fechar inspeção** (o resultado é calculado) ou **Cancelar** (somente Aberta). **Exportar CSV** no Painel baixa todas as inspeções.
 
 Para usar o frontend publicado na Vercel com o seu backend local, veja [Frontend na Vercel](#frontend-na-vercel-com-backend-local).
 
@@ -92,10 +95,10 @@ Para usar o frontend publicado na Vercel com o seu backend local, veja [Frontend
 ## Testes
 
 ```
-pytest -q                     # em backend/  (201 testes)
-npm test -- --run             # em frontend/ (37 testes)
+pytest -q                     # em backend/  (229 testes)
+npm test -- --run             # em frontend/ (59 testes)
 npm run build                 # em frontend/ (tsc + vite)
-npx playwright test           # em e2e/      (9 passos; sobe API e Vite em portas próprias e regrava as telas)
+npx playwright test           # em e2e/      (11 passos; sobe API e Vite em portas próprias e regrava as telas)
 ```
 
 Primeira vez no E2E: `cd e2e && npm install && npx playwright install chromium`. O E2E usa banco SQLite temporário e não toca em `backend/data/`. O CI (`.github/workflows/ci.yml`) roda `pytest`, `npm test` e `npm run build`; o E2E **não** roda no CI.
@@ -151,7 +154,9 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 - **Uso local e de um único usuário:** sem login, sem perfis com permissão e sem acesso de outros computadores. A API só escuta em `127.0.0.1`.
 - **Frontend na Vercel depende do backend local:** só funciona no computador onde o backend roda, exige `CORS_ORIGINS` e a permissão do navegador para acessar a rede local; Safari bloqueia. Em outros dispositivos o site abre, mas sem dados.
 - **Armazenamento local:** banco SQLite e fotos em disco, backup manual (`.db` + `fotos/`). Hospedar o backend em nuvem exige PostgreSQL e armazenamento de objetos (ver abaixo).
-- **Locais e modelo de checklist fixos:** não há tela para cadastrar locais nem editar o modelo; locais vêm dos exemplos ou de `POST /api/v1/locais`.
+- **Locais e checklist:** a tela só **cria** locais (não edita nem inativa); o modelo de checklist (6 itens) é fixo e não tem tela de edição.
+- **Número do processo:** texto livre, sem validação de formato e não único. Inspeções criadas antes do campo existir ficam com o número vazio ("—") até serem editadas; o banco antigo é atualizado sozinho na inicialização da API (coluna adicionada sem perder dados).
+- **Lista:** mostra até 100 inspeções por consulta (sem paginação na tela).
 - **Regras do fluxo:** só se fecha inspeção Em andamento; só se cancela inspeção Aberta; inspeção finalizada ou cancelada não pode ser reaberta nem editada; inspeção agendada para o futuro não aceita item respondido (P1).
 - **Fotos:** uma por requisição, JPEG/PNG/WebP, até 5 MB e 20 por inspeção; o arquivo original é regravado só com os pixels (sem metadados). Sem edição, rotação ou câmera. O travessão "—" do texto das fotos de exemplo aparece como quadrado (a fonte padrão do Pillow não tem o glifo).
 - **Sem relatórios em PDF, mapa, histórico/auditoria, busca textual ou backup automático** (lista completa na seção 13 do handoff).
@@ -161,6 +166,6 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 ## Pendências do projeto
 
 - **Documentação M0 não escrita:** `docs/requisitos.md`, `docs/criterios-aceite.md`, as ADRs e `docs/migracao-postgresql.md` não existem; o escopo vale como está no handoff.
-- **Matriz CA01–CA73 incompleta:** os critérios cobertos por teste estão nos arquivos de evidência, mas a matriz final (sprint S4) não foi montada.
+- **Matriz CA01–CA85 incompleta:** os critérios cobertos por teste estão nos arquivos de evidência, mas a matriz final (sprint S4) não foi montada.
 - **Licença e visibilidade do repositório (P10):** indefinidas.
 - As demais pendências (P1–P9) e os padrões adotados estão na seção 9 do handoff; P11 (versões) está resolvida em [Instalação](#instalação).

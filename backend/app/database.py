@@ -62,7 +62,21 @@ def get_db() -> Iterator[Session]:
         db.close()
 
 
+def _garantir_colunas(engine: Engine) -> None:
+    """Migração leve (sem Alembic): acrescenta colunas novas a bancos criados por versões anteriores."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    if "inspecao" in insp.get_table_names():
+        colunas = {c["name"] for c in insp.get_columns("inspecao")}
+        if "numero_processo" not in colunas:
+            with engine.begin() as con:
+                con.execute(text("ALTER TABLE inspecao ADD COLUMN numero_processo VARCHAR(60)"))
+
+
 def criar_tabelas() -> None:
     from app import models  # noqa: F401  registra os modelos
 
-    Base.metadata.create_all(get_engine())
+    engine = get_engine()
+    _garantir_colunas(engine)  # antes do create_all: tabelas novas já nascem completas
+    Base.metadata.create_all(engine)

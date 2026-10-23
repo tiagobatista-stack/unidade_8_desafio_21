@@ -129,22 +129,36 @@ def test_cancelar_ins005_reduz_inspecoes_e_pendencias(com_exemplos):  # CA20
 
 
 def test_cadastrar_nova_aumenta_inspecoes_e_pendencias(com_exemplos):
-    assert com_exemplos.post(f"{BASE}/inspecoes", json={"local_id": 1, "data_agendamento": "2026-10-30", "objetivo": "x"}).status_code == 201
+    corpo = {"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-30", "objetivo": "x"}
+    assert com_exemplos.post(f"{BASE}/inspecoes", json=corpo).status_code == 201
     assert ind(com_exemplos) == (6, 3, 3)
 
 
 # ---------- CSV ----------
+COLUNAS = ["codigo", "numero_processo", "local", "latitude", "longitude", "data_agendamento", "data_realizacao",
+           "status", "resultado", "observacoes_vistoria", "qtd_fotos"]
+
+
+def por_coluna(linhas):
+    """Linhas do CSV indexadas por código, cada uma como dicionário coluna -> valor."""
+    assert len(linhas[0]) == len(COLUNAS)
+    return {l[0]: dict(zip(linhas[0], l)) for l in linhas[1:]}
+
+
 def test_csv_colunas_e_linhas(com_exemplos):  # CA23, CA28, CA58
     r, linhas = ler_csv(com_exemplos)
     assert r.headers["content-type"].startswith("text/csv")
-    assert linhas[0] == ["codigo", "local", "latitude", "longitude", "data_agendamento", "data_realizacao",
-                         "status", "resultado", "observacoes_vistoria", "qtd_fotos"]
-    corpo = {l[0]: l for l in linhas[1:]}
+    assert linhas[0] == COLUNAS
+    corpo = por_coluna(linhas)
     assert len(corpo) == 5
-    assert [corpo[f"INS-00{n}"][9] for n in (1, 2, 3, 4, 5)] == ["3", "2", "2", "2", "0"]
-    assert corpo["INS-001"][1:8] == ["Fazenda Horizonte Azul", "-10.42318", "-58.71264", "2026-10-05",
-                                     "2026-10-06", "FINALIZADA", "APROVADA"]
-    assert corpo["INS-005"][5] == "" and corpo["INS-005"][7] == "" and corpo["INS-005"][8] == ""
+    assert [corpo[f"INS-00{n}"]["qtd_fotos"] for n in (1, 2, 3, 4, 5)] == ["3", "2", "2", "2", "0"]
+    assert [corpo[f"INS-00{n}"]["numero_processo"] for n in (1, 5)] == ["SEMA-PRO-2026/10001", "SEMA-PRO-2026/10005"]
+    i1 = corpo["INS-001"]
+    assert (i1["local"], i1["latitude"], i1["longitude"], i1["data_agendamento"], i1["data_realizacao"],
+            i1["status"], i1["resultado"]) == ("Fazenda Horizonte Azul", "-10.42318", "-58.71264", "2026-10-05",
+                                               "2026-10-06", "FINALIZADA", "APROVADA")
+    i5 = corpo["INS-005"]
+    assert i5["data_realizacao"] == "" and i5["resultado"] == "" and i5["observacoes_vistoria"] == ""
 
 
 def test_csv_campos_especiais_aspas_ponto_e_virgula_quebra(com_exemplos):  # CA41
@@ -153,14 +167,16 @@ def test_csv_campos_especiais_aspas_ponto_e_virgula_quebra(com_exemplos):  # CA4
     assert com_exemplos.patch(f"{BASE}/inspecoes/{i5['id']}", json={"observacoes_vistoria": texto}).status_code == 200
     _, linhas = ler_csv(com_exemplos)
     ins5 = next(l for l in linhas if l[0] == "INS-005")
-    assert len(ins5) == 10 and ins5[8] == texto  # o leitor CSV recupera o texto exato
+    assert len(ins5) == len(COLUNAS) and por_coluna(linhas)["INS-005"]["observacoes_vistoria"] == texto
 
 
 def test_csv_neutraliza_formulas(com_exemplos):
     i5 = por_codigo(com_exemplos, "INS-005")
     com_exemplos.patch(f"{BASE}/inspecoes/{i5['id']}", json={"observacoes_vistoria": "=HYPERLINK(\"http://x\")"})
+    com_exemplos.patch(f"{BASE}/inspecoes/{i5['id']}", json={"numero_processo": "=1+1"})
     _, linhas = ler_csv(com_exemplos)
-    assert next(l for l in linhas if l[0] == "INS-005")[8].startswith("'=")
+    ins5 = por_coluna(linhas)["INS-005"]
+    assert ins5["observacoes_vistoria"].startswith("'=") and ins5["numero_processo"] == "'=1+1"
 
 
 def test_csv_banco_vazio_so_cabecalho(client):

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.models import FotoVistoria, Inspecao
 
 COLUNAS = [
-    "codigo", "local", "latitude", "longitude", "data_agendamento", "data_realizacao",
+    "codigo", "numero_processo", "local", "latitude", "longitude", "data_agendamento", "data_realizacao",
     "status", "resultado", "observacoes_vistoria", "qtd_fotos",
 ]
 _PERIGOSOS = ("=", "+", "-", "@", "\t", "\r")
@@ -29,7 +29,7 @@ def gerar_csv(db: Session) -> str:
     w.writerow(COLUNAS)
     for i in db.scalars(select(Inspecao).order_by(Inspecao.id)).unique():
         w.writerow([
-            i.codigo, _texto_seguro(i.local.nome), i.local.latitude, i.local.longitude,
+            i.codigo, _texto_seguro(i.numero_processo), _texto_seguro(i.local.nome), i.local.latitude, i.local.longitude,
             i.data_agendamento.isoformat(), i.data_realizacao.isoformat() if i.data_realizacao else "",
             i.status, i.resultado or "", _texto_seguro(i.observacoes_vistoria), contagem.get(i.id, 0),
         ])

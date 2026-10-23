@@ -42,6 +42,8 @@ class Inspecao(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     codigo: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    # Obrigatório pela API; nulo só em linhas anteriores à existência do campo.
+    numero_processo: Mapped[str | None] = mapped_column(String(60))
     local_id: Mapped[int] = mapped_column(ForeignKey("local.id"), nullable=False)
     objetivo: Mapped[str] = mapped_column(String(200), nullable=False)
     observacoes: Mapped[str | None] = mapped_column(Text)

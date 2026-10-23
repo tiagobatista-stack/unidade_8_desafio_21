@@ -25,15 +25,16 @@ def criar(dados: InspecaoIn, db: Session = Depends(get_db)):
 
 @router.get("", response_model=Pagina[InspecaoResumo])
 def listar(
-    status: StatusT | None = None,
+    status: list[StatusT] | None = Query(None),
     data_inicio: date | None = None,
     data_fim: date | None = None,
     local_id: int | None = None,
+    numero_processo: str | None = None,
     pagina: int = Query(1, ge=1),
     tamanho: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    dados, total = service.listar(db, status, data_inicio, data_fim, local_id, pagina, tamanho)
+    dados, total = service.listar(db, status, data_inicio, data_fim, local_id, numero_processo, pagina, tamanho)
     return {"dados": dados, "total": total, "pagina": pagina, "tamanho": tamanho}
 
 

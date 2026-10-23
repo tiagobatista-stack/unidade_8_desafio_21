@@ -60,6 +60,7 @@ export default function InspecaoDetalhePage() {
       </header>
 
       <dl className="dados">
+        <div><dt>Processo</dt><dd data-testid="numero-processo">{insp.numero_processo ?? "—"}</dd></div>
         <div><dt>Local</dt><dd>{insp.local.nome} — {insp.local.municipio}</dd></div>
         <div><dt>Coordenadas</dt><dd>{insp.local.latitude}, {insp.local.longitude}</dd></div>
         <div><dt>Agendamento</dt><dd>{formatarData(insp.data_agendamento)}</dd></div>
@@ -76,6 +77,9 @@ export default function InspecaoDetalhePage() {
 
       {!leitura && (
         <div className="acoes">
+          {insp.campos_editaveis.length > 0 && (
+            <Link className="botao secundario" to={`/inspecoes/${id}/editar`}>Editar inspeção</Link>
+          )}
           <button type="button" onClick={() => { setErroAcao(null); setModal("fechar"); }}>Fechar inspeção</button>
           <button type="button" className="perigo" onClick={() => { setErroAcao(null); setModal("cancelar"); }}>Cancelar inspeção</button>
         </div>

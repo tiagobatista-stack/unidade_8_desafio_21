@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
+import EditarInspecaoPage from "./pages/EditarInspecaoPage";
 import InspecaoDetalhePage from "./pages/InspecaoDetalhePage";
 import InspecoesPage from "./pages/InspecoesPage";
 import NovaInspecaoPage from "./pages/NovaInspecaoPage";
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/inspecoes" element={<InspecoesPage />} />
           <Route path="/inspecoes/nova" element={<NovaInspecaoPage />} />
           <Route path="/inspecoes/:id" element={<InspecaoDetalhePage />} />
+          <Route path="/inspecoes/:id/editar" element={<EditarInspecaoPage />} />
           <Route path="*" element={<p className="estado">Página não encontrada.</p>} />
         </Routes>
       </main>

@@ -69,9 +69,9 @@ describe("Lista de inspeções", () => {
     renderizar("/inspecoes");
     const linha5 = (await screen.findByRole("link", { name: "INS-005" })).closest("tr")!;
     const c5 = within(linha5).getAllByRole("cell").map((c) => c.textContent);
-    expect(c5).toEqual(["INS-005", "Fazenda Horizonte Azul", "28/10/2026", "—", "Aberta", "—", "0"]);
+    expect(c5).toEqual(["INS-005", "SEMA-PRO-2026/10005", "Fazenda Horizonte Azul", "28/10/2026", "—", "Aberta", "—", "0", "Editar"]);
     const c2 = within(screen.getByRole("link", { name: "INS-002" }).closest("tr")!).getAllByRole("cell").map((c) => c.textContent);
-    expect(c2).toEqual(["INS-002", "Fazenda Horizonte Azul", "20/10/2026", "21/10/2026", "Finalizada", "Reprovada", "2"]);
+    expect(c2).toEqual(["INS-002", "SEMA-PRO-2026/10002", "Fazenda Horizonte Azul", "20/10/2026", "21/10/2026", "Finalizada", "Reprovada", "2", "—"]);
   });
 
   test("vazio e erro", async () => {
@@ -99,16 +99,13 @@ describe("Lista de inspeções", () => {
     );
   });
 
-  test("pendências une Aberta e Em andamento", async () => {
-    const chamadas = instalarApi(
-      rota("GET", "/inspecoes", (c) => pagina(c.consulta.get("status") === "ABERTA" ? [resumo(5)] : [resumo(4, { status: "EM_ANDAMENTO", data_agendamento: "2026-10-20" })])),
-    );
+  test("pendências: uma única consulta com status repetido (ordem e paginação vêm da API)", async () => {
+    const chamadas = instalarApi(rota("GET", "/inspecoes", pagina([resumo(5), resumo(4, { status: "EM_ANDAMENTO" })])));
     renderizar("/inspecoes?status=PENDENTES");
     await screen.findByRole("link", { name: "INS-004" });
-    expect(screen.getByRole("link", { name: "INS-005" })).toBeInTheDocument();
-    expect(chamadas.map((c) => c.consulta.get("status")).sort()).toEqual(["ABERTA", "EM_ANDAMENTO"]);
-    const ordem = screen.getAllByRole("link").map((l) => l.textContent).filter((t) => t?.startsWith("INS-"));
-    expect(ordem).toEqual(["INS-005", "INS-004"]); // agendamento mais recente primeiro
+    const consultas = chamadas.filter((c) => c.caminho === "/inspecoes");
+    expect(consultas).toHaveLength(1);
+    expect(consultas[0].consulta.getAll("status")).toEqual(["ABERTA", "EM_ANDAMENTO"]);
   });
 });
 
@@ -124,6 +121,7 @@ describe("Nova inspeção", () => {
     expect(screen.getByText("Selecione um local.")).toBeInTheDocument();
     expect(screen.getByText("Informe a data de agendamento.")).toBeInTheDocument();
     expect(screen.getByText("Informe o objetivo.")).toBeInTheDocument();
+    expect(screen.getByText("Informe o número do processo.")).toBeInTheDocument();
     expect(chamadas.some((c) => c.metodo === "POST")).toBe(false);
   });
 
@@ -138,12 +136,13 @@ describe("Nova inspeção", () => {
     await userEvent.selectOptions(screen.getByLabelText("Local"), "2");
     expect(screen.getByLabelText("Latitude")).toHaveValue("-11.21456");
     expect(screen.getByLabelText("Longitude")).toHaveAttribute("readonly");
+    await userEvent.type(screen.getByLabelText("Número do processo"), "SEMA-PRO-2026/12345");
     await userEvent.type(screen.getByLabelText("Data de agendamento"), "2026-10-28"); // agendamento futuro aceito
     await userEvent.type(screen.getByLabelText("Objetivo"), "Vistoria de rotina");
     await userEvent.click(screen.getByRole("button", { name: "Cadastrar inspeção" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: "INS-009" })).toBeInTheDocument());
     const post = chamadas.find((c) => c.metodo === "POST")!;
-    expect(post.corpo).toEqual({ local_id: 2, data_agendamento: "2026-10-28", objetivo: "Vistoria de rotina" });
+    expect(post.corpo).toEqual({ numero_processo: "SEMA-PRO-2026/12345", local_id: 2, data_agendamento: "2026-10-28", objetivo: "Vistoria de rotina" });
   });
 
   test("erro da API aparece com mensagem e detalhes", async () => {
@@ -151,6 +150,7 @@ describe("Nova inspeção", () => {
     renderizar("/inspecoes/nova");
     await screen.findByRole("option", { name: /Fazenda/ });
     await userEvent.selectOptions(screen.getByLabelText("Local"), "1");
+    await userEvent.type(screen.getByLabelText("Número do processo"), "SEMA-PRO-2026/12345");
     await userEvent.type(screen.getByLabelText("Data de agendamento"), "2026-10-20");
     await userEvent.type(screen.getByLabelText("Objetivo"), "x");
     await userEvent.click(screen.getByRole("button", { name: "Cadastrar inspeção" }));

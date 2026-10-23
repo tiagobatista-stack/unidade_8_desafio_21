@@ -65,6 +65,7 @@ def carregar(db: Session) -> list[Inspecao]:
         criado = datetime.combine(agend, datetime.min.time()).replace(hour=8)
         insp = Inspecao(
             codigo=f"INS-{numero:03d}",
+            numero_processo=f"SEMA-PRO-2026/{10000 + numero}",
             local_id=locais[idx_local].id,
             objetivo="Vistoria de rotina (exemplo fictício)",
             observacoes_vistoria=OBS_VISTORIA[numero],

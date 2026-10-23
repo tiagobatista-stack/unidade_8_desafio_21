@@ -23,7 +23,7 @@ def api(client, exemplos):
 
 
 def nova_payload(**kw):
-    base = {"local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "Vistoria de rotina"}
+    base = {"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "data_agendamento": "2026-10-20", "objetivo": "Vistoria de rotina"}
     base.update(kw)
     return base
 
@@ -78,12 +78,12 @@ def test_cadastrar_inspecao(api):  # CA01
 
 
 def test_cadastrar_sem_local(api):  # CA02
-    erro(api.post(f"{BASE}/inspecoes", json={"data_agendamento": "2026-10-20", "objetivo": "x"}), 422, "VALIDACAO_CAMPO")
+    erro(api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "data_agendamento": "2026-10-20", "objetivo": "x"}), 422, "VALIDACAO_CAMPO")
     erro(api.post(f"{BASE}/inspecoes", json=nova_payload(local_id=999)), 422, "VALIDACAO_CAMPO")
 
 
 def test_cadastrar_sem_agendamento(api):  # CA29
-    corpo = erro(api.post(f"{BASE}/inspecoes", json={"local_id": 1, "objetivo": "x"}), 422, "VALIDACAO_CAMPO")
+    corpo = erro(api.post(f"{BASE}/inspecoes", json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": 1, "objetivo": "x"}), 422, "VALIDACAO_CAMPO")
     assert corpo["detalhes"][0]["campo"] == "data_agendamento"
 
 

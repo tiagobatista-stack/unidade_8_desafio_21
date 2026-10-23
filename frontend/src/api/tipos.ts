@@ -26,6 +26,7 @@ export interface Local {
 export interface InspecaoResumo {
   id: number;
   codigo: string;
+  numero_processo: string | null;
   local: { id: number; nome: string; municipio: string };
   objetivo: string;
   data_agendamento: string;
@@ -65,6 +66,8 @@ export interface Foto {
 export interface InspecaoDetalhe {
   id: number;
   codigo: string;
+  numero_processo: string | null;
+  campos_editaveis: string[];
   local: Local;
   objetivo: string;
   observacoes: string | null;
@@ -87,8 +90,17 @@ export interface Indicadores {
   gerado_em: string;
 }
 
+export interface NovoLocal {
+  nome: string;
+  municipio: string;
+  tipo: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface FiltrosLista {
-  status?: string;
+  status?: string[];
+  numero_processo?: string;
   data_inicio?: string;
   data_fim?: string;
 }

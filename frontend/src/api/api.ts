@@ -7,13 +7,17 @@ import type {
   InspecaoResumo,
   Item,
   Local,
+  NovoLocal,
   Pagina,
   Situacao,
 } from "./tipos";
 
-const qs = (p: Record<string, string | number | undefined>) => {
+const qs = (p: Record<string, string | number | string[] | undefined>) => {
   const u = new URLSearchParams();
-  Object.entries(p).forEach(([k, v]) => v !== undefined && v !== "" && u.set(k, String(v)));
+  Object.entries(p).forEach(([k, v]) => {
+    if (Array.isArray(v)) v.forEach((x) => u.append(k, x)); // status repetido: ?status=A&status=B
+    else if (v !== undefined && v !== "") u.set(k, String(v));
+  });
   const s = u.toString();
   return s ? `?${s}` : "";
 };
@@ -22,9 +26,10 @@ export const api = {
   indicadores: () => requisicao<Indicadores>("/indicadores"),
   carregarExemplos: () => requisicao<{ locais: number; inspecoes: number; fotos: number }>("/utilitarios/carregar-exemplos", { method: "POST" }),
   locais: () => requisicao<Pagina<Local>>("/locais"),
+  criarLocal: (dados: NovoLocal) => requisicao<Local>("/locais", json("POST", dados)),
   inspecoes: (f: FiltrosLista) => requisicao<Pagina<InspecaoResumo>>(`/inspecoes${qs({ ...f, tamanho: 100 })}`),
   inspecao: (id: number) => requisicao<InspecaoDetalhe>(`/inspecoes/${id}`),
-  criarInspecao: (dados: { local_id: number; data_agendamento: string; objetivo: string; observacoes?: string }) =>
+  criarInspecao: (dados: { numero_processo: string; local_id: number; data_agendamento: string; objetivo: string; observacoes?: string }) =>
     requisicao<InspecaoDetalhe>("/inspecoes", json("POST", dados)),
   editarInspecao: (id: number, dados: Record<string, unknown>) =>
     requisicao<InspecaoDetalhe>(`/inspecoes/${id}`, json("PATCH", dados)),

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Estado atual do repositório
 
-"Inspeções Simuladas" (laboratório SEMA/MT, **dados 100% fictícios**). Backend (`backend/`), frontend (`frontend/`) e E2E (`e2e/`) estão implementados; faltam a documentação M0 (`docs/requisitos.md`, ADRs etc.) e a matriz CA01–CA73 da S4. O status das sprints está na seção 10 do handoff; evidências em `docs/evidencias/`.
+"Inspeções Simuladas" (laboratório SEMA/MT, **dados 100% fictícios**). Backend (`backend/`), frontend (`frontend/`) e E2E (`e2e/`) estão implementados; faltam a documentação M0 (`docs/requisitos.md`, ADRs etc.) e a matriz CA01–CA85 da S4. O status das sprints está na seção 10 do handoff; evidências em `docs/evidencias/`.
 
 - `HANDOFF_CLAUDE_CODE.md` é a **fonte única de verdade** do escopo (entidades, RN01–RN34, endpoints, contrato de erro, CA01–CA73, seed, fora de escopo). O que não está nele está fora do escopo; dúvida de regra → seção 9 (Pendências P1–P11); se não estiver lá, perguntar antes de decidir.
 - `PLANO_EXECUTAVEL.md` traz, por sprint, objetivo, prompt, comandos de verificação, critérios de aceite e condição de parada. Os documentos referem `docs/PLANO_EXECUTAVEL.md` na estrutura alvo.
@@ -33,7 +33,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Resultado no fechamento: NC crítico → REPROVADA; senão qualquer NC → APROVADA_COM_RESSALVAS; senão APROVADA. Só fecha se EM_ANDAMENTO e todos os itens respondidos.
 - **P1**: o 1º item registrado em inspeção agendada para o futuro **não** preenche realização; retorna 422 `DATA_REALIZACAO_ANTERIOR_AO_AGENDAMENTO`.
 - Indicadores: Inspeções (≠ CANCELADA), Pendências (ABERTA+EM_ANDAMENTO), Finalizadas; invariante Pend + Final = Inspeções; seed esperado **5 / 2 / 3**, numa única consulta agregada.
-- Numeração CA01–CA73 é estável; não renumerar.
+- Numeração CA01–CA73 é estável; não renumerar. A rodada R1 (23/10/2026) acrescentou RN35–RN38 e CA74–CA85 (seção 16 do handoff).
+- `numero_processo` é obrigatório na API (texto livre ≤60, editável em Aberta/Em andamento) mas **nulo no banco** para linhas antigas; `database._garantir_colunas` acrescenta a coluna a bancos criados antes dela (sem Alembic).
+- `GET /inspecoes` aceita `status` repetido (grupos do Painel) e `numero_processo`; o detalhe traz `campos_editaveis` (a regra RN14 fica no backend, a tela só renderiza).
+- Locais podem ser criados pela tela (RN36); edição/inativação continua fora do escopo.
+- Frontend publicado na Vercel com backend local: `VITE_API_URL` (build) e `CORS_ORIGINS` (backend); detalhes no README.
 - Seed de testes é fixture (S1A); o endpoint `POST /utilitarios/carregar-exemplos` só existe na S3 (409 `BANCO_JA_POVOADO` se já houver dados).
 
 ## Comandos (executados neste repositório)

@@ -20,6 +20,7 @@ class Pagina(BaseModel, Generic[T]):
 
 
 class InspecaoIn(BaseModel):
+    numero_processo: str
     local_id: int
     data_agendamento: date
     objetivo: str
@@ -29,6 +30,7 @@ class InspecaoIn(BaseModel):
 
 
 class InspecaoPatch(BaseModel):
+    numero_processo: str | None = None
     local_id: int | None = None
     data_agendamento: date | None = None
     objetivo: str | None = None
@@ -78,6 +80,7 @@ class InspecaoResumo(BaseModel):
 
     id: int
     codigo: str
+    numero_processo: str | None
     local: LocalResumo
     objetivo: str
     data_agendamento: date
@@ -92,6 +95,7 @@ class InspecaoDetalhe(BaseModel):
 
     id: int
     codigo: str
+    numero_processo: str | None
     local: LocalOut
     objetivo: str
     observacoes: str | None
@@ -104,6 +108,7 @@ class InspecaoDetalhe(BaseModel):
     criado_em: datetime
     atualizado_em: datetime
     fechado_em: datetime | None
+    campos_editaveis: list[str]
     itens: list[ItemDetalheOut]
     fotos: list[FotoOut]
     resumo_itens: ResumoItens

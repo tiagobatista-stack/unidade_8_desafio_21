@@ -8,7 +8,7 @@ def test_banco_novo_ja_tem_modelo_e_cria_inspecao_com_6_itens(client):
     ).json()
     r = client.post(
         f"{BASE}/inspecoes",
-        json={"local_id": local["id"], "data_agendamento": "2026-10-20", "objetivo": "Teste"},
+        json={"numero_processo": "SEMA-PRO-2026/12345", "local_id": local["id"], "data_agendamento": "2026-10-20", "objetivo": "Teste"},
     )
     assert r.status_code == 201
     itens = r.json()["itens"]

@@ -22,22 +22,30 @@ def modelo_ativo(db: Session) -> list[ModeloItem]:
 
 def listar(
     db: Session,
-    status: str | None,
+    status: list[str] | None,
     data_inicio: date | None,
     data_fim: date | None,
     local_id: int | None,
+    numero_processo: str | None,
     pagina: int,
     tamanho: int,
 ) -> tuple[list[Inspecao], int]:
     filtros = []
     if status:
-        filtros.append(Inspecao.status == status)
+        filtros.append(Inspecao.status.in_(status))
     if data_inicio:
         filtros.append(Inspecao.data_agendamento >= data_inicio)
     if data_fim:
         filtros.append(Inspecao.data_agendamento <= data_fim)
     if local_id:
         filtros.append(Inspecao.local_id == local_id)
+    if numero_processo and numero_processo.strip():
+        # contém, sem diferenciar maiúsculas; % e _ digitados pelo usuário valem como texto literal
+        esc = chr(92)
+        termo = numero_processo.strip().lower()
+        for c in (esc, "%", "_"):
+            termo = termo.replace(c, esc + c)
+        filtros.append(func.lower(Inspecao.numero_processo).like(f"%{termo}%", escape=esc))
     total = db.scalar(select(func.count()).select_from(Inspecao).where(*filtros)) or 0
     consulta = (
         select(Inspecao)
