@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { urlApi } from "../api/cliente";
 import type { Foto, Item } from "../api/tipos";
 import { Selo } from "./Basicos";
 import { VisualizadorFoto } from "./VisualizadorFoto";
@@ -23,7 +24,7 @@ export function GaleriaFotos({ inspecaoId, fotos, itens, editavel, onMudou }: Pr
         {fotos.map((f, idx) => (
           <li key={f.id} data-testid="foto-galeria">
             <button type="button" className="foto-botao" onClick={() => setAberta(idx)} aria-label={`Abrir foto ${idx + 1}`}>
-              <img src={f.url_miniatura} alt={f.legenda ?? `Foto ${idx + 1}`} loading="lazy" />
+              <img src={urlApi(f.url_miniatura)} alt={f.legenda ?? `Foto ${idx + 1}`} loading="lazy" />
             </button>
             {f.legenda && <p className="legenda">{f.legenda}</p>}
             <p className="texto-puro anotacao-trecho">{trecho(f.anotacao)}</p>

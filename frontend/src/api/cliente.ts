@@ -11,7 +11,12 @@ export class ApiErro extends Error {
   }
 }
 
-const BASE = "/api/v1";
+/** Vazio = mesma origem (proxy do Vite). Em produção estática: VITE_API_URL=http://127.0.0.1:8000 */
+export const API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+const BASE = `${API_BASE}/api/v1`;
+
+/** Converte um caminho devolvido pela API (ex.: /api/v1/...) em URL utilizável pelo navegador. */
+export const urlApi = (caminho: string) => (caminho.startsWith("/") ? API_BASE + caminho : caminho);
 
 export async function requisicao<T>(caminho: string, init?: RequestInit): Promise<T> {
   let resposta: Response;

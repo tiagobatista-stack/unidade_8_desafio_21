@@ -1,4 +1,4 @@
-import { json, requisicao } from "./cliente";
+import { json, requisicao, urlApi } from "./cliente";
 import type {
   FiltrosLista,
   Foto,
@@ -40,4 +40,4 @@ export const api = {
   excluirFoto: (id: number, fotoId: number) => requisicao<void>(`/inspecoes/${id}/fotos/${fotoId}`, { method: "DELETE" }),
 };
 
-export const URL_CSV = "/api/v1/exportacao/inspecoes.csv";
+export const URL_CSV = urlApi("/api/v1/exportacao/inspecoes.csv");

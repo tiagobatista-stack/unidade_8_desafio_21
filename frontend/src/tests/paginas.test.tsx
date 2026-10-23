@@ -283,3 +283,11 @@ describe("Detalhe e checklist", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Inspeção não encontrada.");
   });
 });
+
+describe("URLs da API", () => {
+  test("urlApi mantém caminhos relativos na mesma origem e preserva URLs absolutas", async () => {
+    const { urlApi } = await import("../api/cliente");
+    expect(urlApi("/api/v1/x")).toBe("/api/v1/x"); // sem VITE_API_URL
+    expect(urlApi("https://exemplo.test/a.png")).toBe("https://exemplo.test/a.png");
+  });
+});

@@ -68,6 +68,21 @@ Primeira vez no E2E: `cd e2e && npm install && npx playwright install chromium`.
 └── e2e/         Playwright (fluxo completo + geração de telas)
 ```
 
+## Frontend na Vercel com backend local
+
+O backend continua na máquina do usuário (`127.0.0.1:8000`); só o frontend estático vai para a Vercel, e é o **navegador** que chama a API local. Por isso só funciona no computador onde o backend está rodando (Chrome/Edge/Firefox; Safari bloqueia).
+
+1. Backend, liberando apenas a origem do site (sem barra no final):
+   ```
+   set CORS_ORIGINS=https://SEU-PROJETO.vercel.app        # PowerShell: $env:CORS_ORIGINS="..."
+   uvicorn app.main:app --host 127.0.0.1 --port 8000
+   ```
+   Sem `CORS_ORIGINS` nenhuma origem externa é aceita. Para testar o build localmente use `http://localhost:4173`.
+2. Projeto na Vercel: *Root Directory* `frontend`, variável de ambiente `VITE_API_URL=http://127.0.0.1:8000` (é embutida no build, então um novo deploy é necessário ao mudá-la). O `frontend/vercel.json` já define o build e o redirecionamento das rotas para `index.html`.
+3. Deploy pela CLI (`npm i -g vercel`, depois `vercel login` e `vercel link` na pasta `frontend`) ou pela integração com o GitHub.
+
+Os dados continuam só no computador local; o site publicado não guarda nada.
+
 ## Dados e backup
 
 O banco fica em `backend/data/inspecoes.db` e as fotos em `backend/data/fotos/`. O backup é manual: copie **o arquivo `.db` e a pasta `fotos/`** juntos. Nada disso é versionado.

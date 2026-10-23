@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/api";
-import { paraErro } from "../api/cliente";
+import { paraErro, urlApi } from "../api/cliente";
 import type { Foto, Item } from "../api/tipos";
 import { MensagemErro, Modal, TextoPuro } from "./Basicos";
 import { LIMITE_ANOTACAO } from "./UploadFotos";
@@ -65,7 +65,7 @@ export function VisualizadorFoto({ inspecaoId, fotos, itens, indice, editavel, o
   const vinculo = itens.find((i) => i.id === foto.item_id);
   return (
     <Modal titulo={`Foto ${indice + 1} de ${fotos.length}`} onFechar={onFechar}>
-      <img src={foto.url_original} alt={foto.legenda ?? foto.nome_original} className="foto-grande" />
+      <img src={urlApi(foto.url_original)} alt={foto.legenda ?? foto.nome_original} className="foto-grande" />
       {!editando ? (
         <>
           {foto.legenda && <p className="legenda"><strong>{foto.legenda}</strong></p>}

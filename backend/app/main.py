@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 
+import os
+
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app import database
@@ -17,9 +20,21 @@ async def lifespan(_: FastAPI):
     yield
 
 
+def _configurar_cors(app: FastAPI) -> None:
+    """CORS só para as origens listadas em CORS_ORIGINS (separadas por vírgula). Padrão: nenhuma."""
+    origens = [o.strip().rstrip("/") for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
+    if not origens:
+        return
+    # allow_private_network: navegadores exigem isso quando um site público chama um servidor em 127.0.0.1.
+    app.add_middleware(
+        CORSMiddleware, allow_origins=origens, allow_methods=["*"], allow_headers=["*"], allow_private_network=True
+    )
+
+
 def criar_app() -> FastAPI:
     app = FastAPI(title="Inspeções Simuladas", lifespan=lifespan)
     registrar_handlers(app)
+    _configurar_cors(app)
     api = APIRouter(prefix="/api/v1")
 
     @api.get("/health")
