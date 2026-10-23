@@ -1,0 +1,37 @@
+codigo_inspecao;numero_processo;local;status_inspecao;resultado_inspecao;item_numero;item_descricao;critico;situacao;observacao;origem;qtd_fotos
+INS-001;SEMA-PRO-2026/10001;Fazenda Horizonte Azul;FINALIZADA;APROVADA;1;Licença ambiental fictícia apresentada e dentro da validade;sim;CONFORME;;MODELO;0
+INS-001;SEMA-PRO-2026/10001;Fazenda Horizonte Azul;FINALIZADA;APROVADA;2;Área de preservação delimitada e sem supressão;sim;CONFORME;;MODELO;0
+INS-001;SEMA-PRO-2026/10001;Fazenda Horizonte Azul;FINALIZADA;APROVADA;3;Armazenamento de resíduos adequado;nao;CONFORME;;MODELO;0
+INS-001;SEMA-PRO-2026/10001;Fazenda Horizonte Azul;FINALIZADA;APROVADA;4;Sinalização de segurança visível;nao;CONFORME;;MODELO;0
+INS-001;SEMA-PRO-2026/10001;Fazenda Horizonte Azul;FINALIZADA;APROVADA;5;Registro de manejo/atividade atualizado;nao;CONFORME;;MODELO;0
+INS-001;SEMA-PRO-2026/10001;Fazenda Horizonte Azul;FINALIZADA;APROVADA;6;Destinação de efluentes regular;sim;CONFORME;;MODELO;0
+INS-002;SEMA-PRO-2026/10002;Serraria Ipê Dourado;FINALIZADA;APROVADA_COM_RESSALVAS;1;Licença ambiental fictícia apresentada e dentro da validade;sim;CONFORME;;MODELO;0
+INS-002;SEMA-PRO-2026/10002;Serraria Ipê Dourado;FINALIZADA;APROVADA_COM_RESSALVAS;2;Área de preservação delimitada e sem supressão;sim;CONFORME;;MODELO;0
+INS-002;SEMA-PRO-2026/10002;Serraria Ipê Dourado;FINALIZADA;APROVADA_COM_RESSALVAS;3;Armazenamento de resíduos adequado;nao;CONFORME;;MODELO;0
+INS-002;SEMA-PRO-2026/10002;Serraria Ipê Dourado;FINALIZADA;APROVADA_COM_RESSALVAS;4;Sinalização de segurança visível;nao;NAO_CONFORME;Placas de segurança com tinta desgastada na entrada do galpão.;MODELO;1
+INS-002;SEMA-PRO-2026/10002;Serraria Ipê Dourado;FINALIZADA;APROVADA_COM_RESSALVAS;5;Registro de manejo/atividade atualizado;nao;NAO_CONFORME;Último registro de manejo datado de meses antes da vistoria.;MODELO;1
+INS-002;SEMA-PRO-2026/10002;Serraria Ipê Dourado;FINALIZADA;APROVADA_COM_RESSALVAS;6;Destinação de efluentes regular;sim;CONFORME;;MODELO;0
+INS-003;SEMA-PRO-2026/10003;Posto Rio Claro;FINALIZADA;REPROVADA;1;Licença ambiental fictícia apresentada e dentro da validade;sim;CONFORME;;MODELO;0
+INS-003;SEMA-PRO-2026/10003;Posto Rio Claro;FINALIZADA;REPROVADA;2;Área de preservação delimitada e sem supressão;sim;CONFORME;;MODELO;0
+INS-003;SEMA-PRO-2026/10003;Posto Rio Claro;FINALIZADA;REPROVADA;3;Armazenamento de resíduos adequado;nao;CONFORME;;MODELO;0
+INS-003;SEMA-PRO-2026/10003;Posto Rio Claro;FINALIZADA;REPROVADA;4;Sinalização de segurança visível;nao;CONFORME;;MODELO;0
+INS-003;SEMA-PRO-2026/10003;Posto Rio Claro;FINALIZADA;REPROVADA;5;Registro de manejo/atividade atualizado;nao;CONFORME;;MODELO;0
+INS-003;SEMA-PRO-2026/10003;Posto Rio Claro;FINALIZADA;REPROVADA;6;Destinação de efluentes regular;sim;NAO_CONFORME;Caixa separadora com sinais de transbordamento e resíduo oleoso no solo.;MODELO;2
+INS-004;SEMA-PRO-2026/10004;Reserva Mata Ciliar Beta;FINALIZADA;APROVADA;1;Licença ambiental fictícia apresentada e dentro da validade;sim;CONFORME;;MODELO;0
+INS-004;SEMA-PRO-2026/10004;Reserva Mata Ciliar Beta;FINALIZADA;APROVADA;2;Área de preservação delimitada e sem supressão;sim;CONFORME;;MODELO;0
+INS-004;SEMA-PRO-2026/10004;Reserva Mata Ciliar Beta;FINALIZADA;APROVADA;3;Armazenamento de resíduos adequado;nao;CONFORME;;MODELO;0
+INS-004;SEMA-PRO-2026/10004;Reserva Mata Ciliar Beta;FINALIZADA;APROVADA;4;Sinalização de segurança visível;nao;CONFORME;;MODELO;0
+INS-004;SEMA-PRO-2026/10004;Reserva Mata Ciliar Beta;FINALIZADA;APROVADA;5;Registro de manejo/atividade atualizado;nao;CONFORME;;MODELO;0
+INS-004;SEMA-PRO-2026/10004;Reserva Mata Ciliar Beta;FINALIZADA;APROVADA;6;Destinação de efluentes regular;sim;CONFORME;;MODELO;0
+INS-005;SEMA-PRO-2026/20005;Fazenda E2E Fictícia;ABERTA;;1;Licença ambiental fictícia apresentada e dentro da validade;sim;NAO_RESPONDIDO;;MODELO;0
+INS-005;SEMA-PRO-2026/20005;Fazenda E2E Fictícia;ABERTA;;2;Área de preservação delimitada e sem supressão;sim;NAO_RESPONDIDO;;MODELO;0
+INS-005;SEMA-PRO-2026/20005;Fazenda E2E Fictícia;ABERTA;;3;Armazenamento de resíduos adequado;nao;NAO_RESPONDIDO;;MODELO;0
+INS-005;SEMA-PRO-2026/20005;Fazenda E2E Fictícia;ABERTA;;4;Sinalização de segurança visível;nao;NAO_RESPONDIDO;;MODELO;0
+INS-005;SEMA-PRO-2026/20005;Fazenda E2E Fictícia;ABERTA;;5;Registro de manejo/atividade atualizado;nao;NAO_RESPONDIDO;;MODELO;0
+INS-005;SEMA-PRO-2026/20005;Fazenda E2E Fictícia;ABERTA;;6;Destinação de efluentes regular;sim;NAO_RESPONDIDO;;MODELO;0
+INS-006;SEMA-PRO-2026/12345;Frigorífico Boa Terra (fictício);CANCELADA;;1;Licença ambiental fictícia apresentada e dentro da validade;sim;NAO_RESPONDIDO;;MODELO;0
+INS-006;SEMA-PRO-2026/12345;Frigorífico Boa Terra (fictício);CANCELADA;;2;Área de preservação delimitada e sem supressão;sim;NAO_RESPONDIDO;;MODELO;0
+INS-006;SEMA-PRO-2026/12345;Frigorífico Boa Terra (fictício);CANCELADA;;3;Armazenamento de resíduos adequado;nao;NAO_RESPONDIDO;;MODELO;0
+INS-006;SEMA-PRO-2026/12345;Frigorífico Boa Terra (fictício);CANCELADA;;4;Sinalização de segurança visível;nao;NAO_RESPONDIDO;;MODELO;0
+INS-006;SEMA-PRO-2026/12345;Frigorífico Boa Terra (fictício);CANCELADA;;5;Registro de manejo/atividade atualizado;nao;NAO_RESPONDIDO;;MODELO;0
+INS-006;SEMA-PRO-2026/12345;Frigorífico Boa Terra (fictício);CANCELADA;;6;Destinação de efluentes regular;sim;NAO_RESPONDIDO;;MODELO;0

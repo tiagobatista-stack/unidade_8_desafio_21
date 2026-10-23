@@ -1,5 +1,6 @@
 # HANDOFF_CLAUDE_CODE.md — Inspeções Simuladas (laboratório SEMA/MT, fictício)
 
+> A síntese Spec-Driven Development (princípios, requisitos EARS, verificação, decisões e prompt de retomada) está em `docs/SPEC_SDD.md`.
 > Fonte única de verdade do escopo aprovado. Use como base do `/init` (CLAUDE.md) e do `README.md`.
 > Todos os dados são **fictícios**. Nenhum dado real da SEMA/MT.
 > Data de referência da consolidação: 23/10/2026. **Atualizado em 23/10/2026** após a rodada de melhorias pós-uso (seção 16) e a rodada R2 (CAR e proprietários, cópia no fechamento, relatório numerado).
@@ -99,6 +100,7 @@ Perfis (apenas papéis de desenho, sem controle de acesso): *Inspetor simulado* 
 | RN44 | A impressão usa o navegador (CSS `@media print`, A4, sem menu nem botões); não há biblioteca de PDF no backend. Rodapé com nº do relatório, INS e aviso de sistema fictício, e "Página X de Y", saem das caixas de margem do `@page` (Chrome/Edge; Firefox pode omitir a numeração). O botão "Imprimir / Salvar PDF" só é liberado depois que as imagens carregarem. |
 | RN45 | Mensagens orientativas vêm do backend: fechar inspeção ABERTA devolve 409 `TRANSICAO_INVALIDA` com "A inspeção ainda não foi iniciada. Registre a situação de pelo menos um item do checklist antes de fechar."; o detalhe traz `fechamento_bloqueado_motivo` e `registro_bloqueado_motivo` (agendamento futuro), e a tela os exibe antes de qualquer tentativa. |
 | RN46 | Todo campo de formulário da interface tem `id`, `name` únicos e `label` associado (`htmlFor`). |
+| RN47 | A exportação dos itens do checklist é um arquivo **separado** (`GET /exportacao/itens.csv`, download `itens-checklist.csv`), com uma linha por item de cada inspeção (inclui canceladas e itens avulsos), delimitador `;`, UTF-8 com BOM e texto livre protegido contra fórmulas. Colunas: `codigo_inspecao; numero_processo; local; status_inspecao; resultado_inspecao; item_numero; item_descricao; critico (sim/nao); situacao; observacao; origem; qtd_fotos`. `item_numero` é a posição no checklist (a mesma numeração do relatório); `qtd_fotos` conta só as fotos vinculadas ao item. O CSV por inspeção (`/exportacao/inspecoes.csv`) não muda. |
 
 **Comportamentos de serviço:** o primeiro item registrado em ABERTA muda o status para EM_ANDAMENTO e preenche `data_realizacao` com hoje se vazia (ver pendência P1). Gravar observações/fotos não muda status.
 
@@ -126,6 +128,7 @@ Perfis (apenas papéis de desenho, sem controle de acesso): *Inspetor simulado* 
 | DELETE `/inspecoes/{id}/fotos/{foto_id}` | exclui | 204 | 404, 409 |
 | GET `/indicadores` | `{inspecoes, pendencias, finalizadas, gerado_em}` | 200 | — |
 | GET `/exportacao/inspecoes.csv` | CSV | 200 | — |
+| GET `/exportacao/itens.csv` | CSV dos itens do checklist, uma linha por item (RN47) | 200 | — |
 | POST `/utilitarios/carregar-exemplos` | seed | 201 | 409 |
 | GET `/utilitarios/verificar-fotos` | consistência registro/arquivo | 200 | — |
 
@@ -173,7 +176,7 @@ Ordem de validação no envio de foto: estado da inspeção (409) → campos e a
 
 | Rota | Tela | Conteúdo |
 |---|---|---|
-| `/` | Painel | 3 cartões **clicáveis** (cada um abre a lista da categoria); atalhos "Nova inspeção" e "Ver pendências"; botões "Carregar exemplos" e "Exportar CSV" |
+| `/` | Painel | 3 cartões **clicáveis** (cada um abre a lista da categoria); atalhos "Nova inspeção" e "Ver pendências"; botões "Carregar exemplos", "Exportar CSV" (por inspeção) e "Exportar itens (CSV)" (um por item do checklist) |
 | `/inspecoes` | Lista | código, **processo**, local, agendamento, realização ("—"), status, resultado, fotos, **ações (Editar, só em Aberta/Em andamento)**; filtros de status (inclui os grupos "Todas, exceto canceladas" e "Pendências"), **busca por número do processo** e período; mostra o filtro ativo e o total |
 | `/inspecoes/nova` | Nova | **número do processo**, local (com lat/long somente leitura) e botão **"+ Novo local"** (modal, RN36), agendamento, objetivo, observações |
 | `/inspecoes/:id` | Detalhe/execução | cabeçalho (status, **processo**, datas, local); botão **Editar inspeção** quando houver campos editáveis; cartão **Empreendimento** (CAR "Não informado" quando vazio, proprietários) com a origem dos dados; botão **Gerar relatório** em qualquer status; avisos de início da inspeção e de agendamento futuro; "Checklist concluído em dd/mm/aaaa hh:mm" nas finalizadas; checklist; item avulso; **observações da vistoria** (contador x/2000); **fotos** (lista de pendentes com anotação obrigatória por foto, galeria, visualizador com anotação); Fechar e Cancelar (modais); somente leitura em FINALIZADA/CANCELADA |
@@ -205,9 +208,9 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 | P15 | Formato do CAR (23/10/2026). | Decisão do usuário: texto livre, nunca rejeita formato; aviso só informativo. |
 | P16 | Legado da rodada R2. | Decisão do usuário: ao subir a API, finalizadas antigas recebem a cópia do **Local atual** (limitação: não é o Local do dia do fechamento) e número de relatório na ordem do fechamento. |
 | P17 | `VITE_API_URL` na Vercel. | Mantido em `http://127.0.0.1:8000` (backend local): o site só funciona no computador do usuário. Backend em nuvem exigiria PostgreSQL e armazenamento de objetos. |
-| PB1 | **Aguarda decisão.** Vistoria antes da data agendada (RN13/P1). | Padrão atual: (a) manter o bloqueio, com o aviso preventivo da tela. Alternativas: (b) ajustar o agendamento para hoje guardando o original (coluna nova); (c) permitir realização anterior ao agendamento com aviso (quebra o CHECK de datas). |
-| PB2 | **Aguarda decisão.** Data de preenchimento por item (`respondido_em`). | Não implementado. Exigiria ADD COLUMN (o mecanismo de migração leve já existe); `data_realizacao` + `fechado_em` bastam para o relatório atual. |
-| PB3 | **Aguarda decisão.** Exportação dos itens do checklist. | Não implementado. Proposta: CSV separado `GET /exportacao/itens.csv`, uma linha por item, sem alterar o CSV atual. |
+| PB1 | Vistoria antes da data agendada (RN13/P1). | **Decidido pelo usuário (23/10/2026): manter a regra atual (a)**, com o aviso preventivo da tela. A opção (c) foi descartada porque quebraria o CHECK `data_realizacao >= data_agendamento`; (b) não foi escolhida. Nada a implementar. |
+| PB2 | Data de preenchimento por item (`respondido_em`). | **Decidido pelo usuário (23/10/2026): adiar.** `data_realizacao` e `fechado_em` cobrem o relatório. Pode voltar a ser avaliado; exigiria ADD COLUMN (o mecanismo de migração leve já existe). |
+| PB3 | Exportação dos itens do checklist. | **Implementada (23/10/2026), conforme a proposta aprovada:** arquivo separado, sem alterar o CSV atual (RN47, CA111–CA116). |
 
 ## 10. Status das sprints (atualizar a cada entrega)
 
@@ -216,13 +219,14 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 - [x] S1 — Banco + API CRUD (A: inspeções/itens/locais [x] · B: fotos [x])
 - [x] S2 — Frontend e integração (A: base/lista/nova/checklist · B: observações e fotos)
 - [x] S3 — Dashboard com dados reais (+ exemplos e CSV)
-- [~] S4 — Testes, correções, README e GitHub (suítes, E2E e deploy do frontend feitos; faltam a matriz CA01–CA110 completa e a decisão de licença/P10)
+- [~] S4 — Testes, correções, README e GitHub (suítes, E2E e deploy do frontend feitos; faltam a matriz CA01–CA116 completa e a decisão de licença/P10)
 - [x] R1 — Rodada de melhorias pós-uso (23/10/2026): cartões clicáveis (RN37), botão/página Editar e `campos_editaveis` (RN38), número do processo (RN35, migração leve do banco), filtro por número, `status` repetível na lista e criação de local pela tela (RN36).
 - [x] R2 — Correções de usabilidade (A1–A5), dados do empreendimento (CAR e proprietários, tela Locais), cópia no fechamento e relatório de vistoria numerado e imprimível (RN39–RN46). A Parte B ficou só como opções (PB1–PB3).
+- [x] R3 — Decisões da Parte B (23/10/2026): B1 manter a regra atual, B2 adiado, B3 implementada (CSV separado dos itens do checklist, RN47).
 
-Evidências das rodadas: `docs/evidencias/R1-melhorias.md` e `docs/evidencias/R2-melhorias.md` (CA → teste; PDFs do relatório em `docs/evidencias/`).
+Evidências das rodadas: `docs/evidencias/R1-melhorias.md`, `R2-melhorias.md` e `R3-exportacao-itens.md` (CA → teste; PDFs do relatório e CSVs de exemplo em `docs/evidencias/`).
 
-**Última verificação (23/10/2026):** backend `pytest -q` = **334 passed**; frontend `npm test -- --run` = **124 passed** e `npm run build` ok; E2E Playwright = **14 passed** (40 telas em `docs/evidencias/telas/` e 2 PDFs do relatório).
+**Última verificação (23/10/2026):** backend `pytest -q` = **348 passed**; frontend `npm test -- --run` = **125 passed** e `npm run build` ok; E2E Playwright = **14 passed** (telas em `docs/evidencias/telas/`, 2 PDFs do relatório e 2 CSVs de exemplo).
 
 Plano detalhado, prompts e verificações: `docs/PLANO_EXECUTAVEL.md`.
 
@@ -240,6 +244,7 @@ Plano detalhado, prompts e verificações: `docs/PLANO_EXECUTAVEL.md`.
 **Anotação da foto.** CA61 sem anotação → 422, nada gravado em disco/banco · CA62 só espaços → 422 · CA63 1000 ok, 1001 → 422 · CA64 1 caractere ok · CA65 trim aplicado · CA66 edição persiste · CA67 editar para vazio → 422, texto anterior mantido · CA68 editar em Finalizada/Cancelada → 409 · CA69 UI: "Enviar" desabilitado com anotação faltando · CA70 falha parcial preserva anotações e grava as válidas · CA71 `<script>` literal com quebras · CA72 anotação não altera resultado (INS-003 segue Reprovada) · CA73 excluir foto remove a anotação.
 **Rodada R1 (CA74–CA85, numeração nova; CA01–CA73 seguem estáveis, P9).** CA74 cadastro sem `numero_processo` (ausente, vazio ou só espaços) → 422 com campo `numero_processo` · CA75 número gravado com trim, 60 caracteres aceito e 61 → 422, texto livre e repetido entre inspeções aceito · CA76 número editável em Aberta e Em andamento (vazio → 422, valor anterior mantido) e em Finalizada/Cancelada → 409 · CA77 detalhe devolve `campos_editaveis` conforme o status (Aberta: 6 campos; Em andamento: 4; Finalizada/Cancelada: nenhum) · CA78 `GET /inspecoes?status=A&status=B` une os status com total e paginação corretos · CA79 filtro `numero_processo` por trecho, sem diferenciar maiúsculas, com `%` e `_` como texto e sem injeção · CA80 cada cartão do Painel abre a lista da categoria e o total listado coincide com o contador (Inspeções exclui canceladas) · CA81 botão Editar na lista e no detalhe só em Aberta/Em andamento · CA82 página de edição permite só os campos de `campos_editaveis`, envia só o que mudou e mostra erros 409/422 sem perder o digitado · CA83 "Novo local" cria local válido já selecionado, exige campos, recusa coordenada fora de MT (erro da API) e cancela sem criar · CA84 banco criado antes do campo ganha a coluna `numero_processo` sem perder dados e a migração é idempotente · CA85 CSV traz `numero_processo` após `codigo` e neutraliza texto que começa com `=`, `+`, `-` ou `@`.
 **Rodada R2 (CA86–CA110, numeração nova; CA01–CA85 seguem estáveis, P9).** CA86 fechar inspeção Aberta devolve mensagem orientativa (código `TRANSICAO_INVALIDA`) e o botão fica desabilitado com o motivo · CA87 aviso, acima do checklist de inspeção Aberta, de que só registrar a situação de um item inicia a inspeção · CA88 aviso preventivo de agendamento futuro com link para editar e seletores de situação desabilitados, mantendo o bloqueio da API · CA89 todo campo de formulário com id, name únicos e label associado · CA90 rótulos de datas explicados e "Checklist concluído em dd/mm/aaaa hh:mm" na finalizada · CA91 CAR opcional, em maiúsculas e sem espaços nas pontas, nenhum formato rejeitado (acima de 60 → 422) · CA92 proprietário exige nome; telefone com 10 ou 11 dígitos e DDD, guardado só com dígitos e exibido (65) 99999-9999; erro aponta a linha; máximo de 20 · CA93 PUT de local substitui a lista de proprietários (lista vazia limpa) e um PUT inválido não altera nada · CA94 tela Locais lista, cadastra e edita, com adicionar e remover proprietários · CA95 detalhe da inspeção mostra o empreendimento (CAR "Não informado" quando vazio) · CA96 editar o Local depois do fechamento não altera a inspeção finalizada; antes do fechamento ela usa os dados atuais · CA97 falha ao gravar a cópia desfaz o fechamento · CA98 preenchimento do legado idempotente e sem sobrescrever cópia existente · CA99 número de relatório `NNNN/AAAA` sequencial, sem repetição e com índice único · CA100 virada de ano reinicia a sequência de cada ano sem reutilizar números · CA101 cancelar, fechamento bloqueado e gerar prévia não consomem número · CA102 relatório finalizado com as 6 seções na ordem, checklist numerado com totais e críticos não conformes destacados · CA103 fotos numeradas com imagem original, legenda, anotação, item vinculado (ou "Sem vínculo") e data de captura · CA104 conclusão com o resultado e a regra aplicada · CA105 prévia sem número, com a marca "PRÉVIA, NÃO FINALIZADO" · CA106 impressão A4 sem menu nem botões, rodapé e "Página X de Y" em todas as páginas e no máximo 2 fotos por página sem corte (evidência: PDFs gerados pelo E2E) · CA107 "Imprimir / Salvar PDF" só habilita com as imagens carregadas · CA108 seed, testes e capturas só com dados fictícios (proprietários, telefones, CAR) · CA109 migração leve idempotente de `numero_car`, `proprietario`, `empreendimento_json`, `numero_relatorio` (índice único) e `contador_relatorio` em banco antigo · CA110 fotos de exemplo com o texto "FOTO FICTÍCIA — INS-00X #n" legível.
+**Rodada R3 (CA111–CA116, numeração nova; CA01–CA110 seguem estáveis, P9).** CA111 `GET /exportacao/itens.csv` entrega um arquivo separado (nome `itens-checklist.csv`), com BOM UTF-8, delimitador `;` e as 12 colunas na ordem de RN47 · CA112 uma linha por item de cada inspeção, inclusive canceladas e itens avulsos, na ordem das inspeções e do checklist (`item_numero` é a posição) · CA113 os dados da inspeção (processo, local, status, resultado) se repetem em cada linha, `critico` sai `sim`/`nao`, situação e origem saem como código e `qtd_fotos` conta só as fotos vinculadas ao item (acompanha envio e exclusão) · CA114 texto com aspas, `;` e quebra de linha volta idêntico ao ser lido e texto que começa com `=`, `+`, `-` ou `@` recebe apóstrofo, sem afetar números e códigos · CA115 banco vazio gera só o cabeçalho e o CSV por inspeção segue com as mesmas colunas de antes · CA116 o Painel tem o botão "Exportar itens (CSV)" (download `itens-checklist.csv`) ao lado de "Exportar CSV".
 
 ## 12. Dados de exemplo (seed)
 
@@ -305,5 +310,7 @@ Instalação, execução, variáveis de ambiente, testes e publicação do front
 | 23/10/2026 | CAR e proprietários nos Locais, com tela Locais e cartão Empreendimento no detalhe | RN39, RN40, CA91–CA95, P15 |
 | 23/10/2026 | Cópia dos dados do empreendimento no fechamento, com preenchimento do legado | RN41, CA96–CA98, P16 |
 | 23/10/2026 | Relatório de vistoria numerado (NNNN/AAAA), prévia e impressão A4 pelo navegador | RN42–RN44, CA99–CA107 |
+| 23/10/2026 | Decisões da Parte B: manter a regra de vistoria antes do agendamento, adiar `respondido_em` e implementar a exportação dos itens do checklist (CSV separado) | PB1–PB3, RN47, CA111–CA116 |
+| 23/10/2026 | Especificação Spec-Driven Development do projeto (`docs/SPEC_SDD.md`), com protocolo de mudança e prompt de retomada de sessão | SPEC_SDD |
 
 Efeito colateral a lembrar: o contrato de `POST /inspecoes` mudou (campo obrigatório) e o CSV ganhou uma coluna; só o frontend deste repositório consome a API. Na R2, `PUT /locais` passou a substituir a lista de proprietários (um PUT sem `proprietarios` apaga os existentes) e o JSON do local e do detalhe ganhou novos campos.

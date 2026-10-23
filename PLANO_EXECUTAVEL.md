@@ -24,6 +24,7 @@ Escopo e decisões: **HANDOFF_CLAUDE_CODE.md** (fonte única de verdade). Este p
 | S4 | testes, correções, README, GitHub | CA01–CA73 completos |
 | R1 | cartões clicáveis, editar, nº do processo, novo local | CA74–CA85 |
 | R2 | usabilidade, CAR e proprietários, cópia no fechamento, relatório | CA86–CA110 |
+| R3 | decisões da Parte B e exportação dos itens do checklist | CA111–CA116 |
 
 ---
 
@@ -447,3 +448,36 @@ Conferir os PDFs gerados: rodapé e "Página X de Y" em todas as páginas, no m�
 **Evidências.** `docs/evidencias/R2-melhorias.md` (CA → teste, defeitos encontrados), telas em `docs/evidencias/telas/`, PDFs do relatório e resumo de cada suíte (334 backend, 124 frontend, 14 E2E na última execução).
 
 **Condição de parada.** Parar se aparecer conflito no `git pull --rebase` (mostrar os arquivos, sem resolver); se o push falhar por credencial (informar o erro e o comando, sem gravar token); se algum arquivo proibido aparecer no commit; ou se for preciso rejeitar um formato de CAR (exige confirmação do usuário). Não implementar a Parte B sem decisão.
+
+---
+
+## R3 — Decisões da Parte B e exportação dos itens do checklist
+
+**Objetivo.** Registrar as decisões do usuário (B1 manter a regra atual, B2 adiar `respondido_em`) e implementar a B3: um CSV separado com uma linha por item do checklist, sem alterar o CSV por inspeção.
+
+**Dependências.** R2 concluída.
+
+**Arquivos prováveis.** `backend/app/services/export_itens_service.py`, `backend/app/routers/painel.py`, `backend/tests/api/test_exportacao_itens.py`, `frontend/src/api/api.ts`, `frontend/src/pages/PainelPage.tsx`, `e2e/tests/fluxo.spec.ts`, `docs/evidencias/R3-exportacao-itens.md`.
+
+**Prompt para Claude Code (R3)**
+```
+B1: manter a regra atual (a). B2: adiar. B3: implementar como proposto, com testes, commit e push seguindo a Parte D.
+1. GET /api/v1/exportacao/itens.csv: uma linha por item de cada inspeção (inclui canceladas e itens avulsos), delimitador ";", UTF-8 com BOM, texto livre protegido contra fórmulas. Colunas: codigo_inspecao, numero_processo, local, status_inspecao, resultado_inspecao, item_numero, item_descricao, critico (sim/nao), situacao, observacao, origem, qtd_fotos. Não altere /exportacao/inspecoes.csv.
+2. Botão "Exportar itens (CSV)" no Painel, ao lado de "Exportar CSV".
+3. Testes de API (formato, conteúdo, caracteres especiais, fórmulas, fotos por item, CSV atual inalterado), Vitest e E2E (download e conferência do conteúdo).
+4. Atualize README, PLANO, HANDOFF (PB1–PB3, RN47, CA111–CA116) e as evidências. Antes de cada commit rode backend, frontend e E2E e confira que nenhum arquivo proibido entra. fetch, pull --rebase se necessário, push sem --force.
+```
+
+**Comandos de verificação**
+```
+cd backend && pytest -q
+cd ../frontend && npm test -- --run && npm run build
+cd ../e2e && npx playwright test      # também grava docs/evidencias/itens-checklist-e2e.csv
+git status --short && git log --oneline -5
+```
+
+**Critérios de aceite.** CA111–CA116 (seção 11 do handoff). O CSV por inspeção segue com as mesmas colunas.
+
+**Evidências.** `docs/evidencias/R3-exportacao-itens.md` e o CSV de exemplo gerado pelo E2E.
+
+**Condição de parada.** Parar se a exportação exigir mudar as colunas do CSV atual, se aparecer conflito no `git pull --rebase` ou se faltar credencial no push.

@@ -20,7 +20,8 @@ Ferramenta **local, para um único usuário**, que simula o fluxo de inspeções
 - **Relatório de vistoria** numerado (`Relatório de Vistoria nº 0001/2026`) e imprimível, com botão "Imprimir / Salvar PDF" (veja [Relatório de vistoria](#relatório-de-vistoria)). Inspeção não finalizada gera uma **prévia** sem número, marcada "PRÉVIA, NÃO FINALIZADO".
 - Cancelamento com motivo (somente inspeções Abertas). Inspeções finalizadas ou canceladas ficam somente leitura.
 - Painel com três indicadores (**Inspeções**, **Pendências**, **Finalizadas**) **clicáveis**: cada um abre a lista da categoria (Inspeções exclui as canceladas). A lista tem filtros de status e período, **busca por número do processo** e mostra o filtro ativo.
-- Carga de dados de exemplo (4 locais com CAR e proprietários fictícios, 5 inspeções com números de processo fictícios e 9 fotos) e exportação CSV (inclui `numero_processo`).
+- Carga de dados de exemplo (4 locais com CAR e proprietários fictícios, 5 inspeções com números de processo fictícios e 9 fotos).
+- **Duas exportações CSV** no Painel: **Exportar CSV** (uma linha por inspeção, inclui `numero_processo`) e **Exportar itens (CSV)** (arquivo separado, uma linha por item do checklist, com situação, observação, criticidade e quantidade de fotos de cada item).
 
 Regra importante (decisão P1 do handoff): registrar o primeiro item de uma inspeção agendada para o futuro é **bloqueado** (422) até a data do agendamento ou até reagendar a inspeção.
 
@@ -79,7 +80,7 @@ npm run dev
 
 **3. Usar:** abra http://localhost:5173. Num banco novo não há locais: crie um em **Nova inspeção → + Novo local** ou clique em **Carregar exemplos** no Painel para criar 4 locais, 5 inspeções e 9 fotos fictícias (o Painel passa a mostrar 5 / 2 / 3). A carga só é aceita em banco sem dados.
 
-Fluxo típico: **Locais** (cadastre o empreendimento, com CAR e proprietários) → **Nova inspeção** (informe o número do processo) → abrir a inspeção → responder o checklist (a inspeção passa a Em andamento) → registrar observações e fotos com anotação → **Fechar inspeção** (o resultado é calculado e o relatório recebe número) ou **Cancelar** (somente Aberta) → **Gerar relatório**. **Exportar CSV** no Painel baixa todas as inspeções.
+Fluxo típico: **Locais** (cadastre o empreendimento, com CAR e proprietários) → **Nova inspeção** (informe o número do processo) → abrir a inspeção → responder o checklist (a inspeção passa a Em andamento) → registrar observações e fotos com anotação → **Fechar inspeção** (o resultado é calculado e o relatório recebe número) ou **Cancelar** (somente Aberta) → **Gerar relatório**. No Painel, **Exportar CSV** baixa uma linha por inspeção e **Exportar itens (CSV)** baixa uma linha por item do checklist.
 
 Para usar o frontend publicado na Vercel com o seu backend local, veja [Frontend na Vercel](#frontend-na-vercel-com-backend-local).
 
@@ -97,15 +98,15 @@ Para usar o frontend publicado na Vercel com o seu backend local, veja [Frontend
 ## Testes
 
 ```
-pytest -q                     # em backend/  (334 testes)
-npm test -- --run             # em frontend/ (124 testes)
+pytest -q                     # em backend/  (348 testes)
+npm test -- --run             # em frontend/ (125 testes)
 npm run build                 # em frontend/ (tsc + vite)
 npx playwright test           # em e2e/      (14 passos; sobe API e Vite em portas próprias, regrava as telas e gera os PDFs de exemplo do relatório)
 ```
 
 Primeira vez no E2E: `cd e2e && npm install && npx playwright install chromium`. O E2E usa banco SQLite temporário e não toca em `backend/data/`. O CI (`.github/workflows/ci.yml`) roda `pytest`, `npm test` e `npm run build`; o E2E **não** roda no CI.
 
-Resultados e capturas das telas: [`S1A.md`](docs/evidencias/S1A.md), [`S1B.md`](docs/evidencias/S1B.md), [`S2-S3-E2E.md`](docs/evidencias/S2-S3-E2E.md), [`R1-melhorias.md`](docs/evidencias/R1-melhorias.md), [`R2-melhorias.md`](docs/evidencias/R2-melhorias.md), a pasta [`docs/evidencias/telas/`](docs/evidencias/telas/) e os PDFs do relatório ([finalizado](docs/evidencias/relatorio-INS-004.pdf) e [prévia](docs/evidencias/relatorio-previa-INS-005.pdf)).
+Resultados e capturas das telas: [`S1A.md`](docs/evidencias/S1A.md), [`S1B.md`](docs/evidencias/S1B.md), [`S2-S3-E2E.md`](docs/evidencias/S2-S3-E2E.md), [`R1-melhorias.md`](docs/evidencias/R1-melhorias.md), [`R2-melhorias.md`](docs/evidencias/R2-melhorias.md), [`R3-exportacao-itens.md`](docs/evidencias/R3-exportacao-itens.md), a pasta [`docs/evidencias/telas/`](docs/evidencias/telas/) e os PDFs do relatório ([finalizado](docs/evidencias/relatorio-INS-004.pdf) e [prévia](docs/evidencias/relatorio-previa-INS-005.pdf)).
 
 ## Estrutura de pastas
 
@@ -171,6 +172,7 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 
 ## Documentação
 
+- [`docs/SPEC_SDD.md`](docs/SPEC_SDD.md): **especificação Spec-Driven Development** (princípios, modelo, requisitos, API, verificação, decisões, estado e como retomar a sessão). Comece por ela.
 - [`HANDOFF_CLAUDE_CODE.md`](HANDOFF_CLAUDE_CODE.md): fonte única do escopo (regras de negócio, endpoints, contrato de erro, critérios de aceite, dados de exemplo e pendências).
 - [`PLANO_EXECUTAVEL.md`](PLANO_EXECUTAVEL.md): plano por sprint, com prompts, verificações e critérios de aceite.
 - [`CLAUDE.md`](CLAUDE.md): orientações para o Claude Code neste repositório.
@@ -181,7 +183,7 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 - **Frontend na Vercel depende do backend local:** só funciona no computador onde o backend roda, exige `CORS_ORIGINS` e a permissão do navegador para acessar a rede local; Safari bloqueia. Em outros dispositivos o site abre, mas sem dados.
 - **Armazenamento local:** banco SQLite e fotos em disco, backup manual (`.db` + `fotos/`). Hospedar o backend em nuvem exige PostgreSQL e armazenamento de objetos (ver abaixo).
 - **Locais e checklist:** a tela Locais lista, cria e edita (não inativa nem exclui); o modelo de checklist (6 itens) é fixo e não tem tela de edição. O CAR é texto livre (nenhum formato é rejeitado) e os telefones aceitam só 10 ou 11 dígitos com DDD.
-- **Cópia do empreendimento:** vale a partir do fechamento. Nas inspeções finalizadas antes desta rodada ela reflete o local **de hoje**. A lista de inspeções e o CSV mostram o nome do local atual, não a cópia.
+- **Cópia do empreendimento:** vale a partir do fechamento. Nas inspeções finalizadas antes desta rodada ela reflete o local **de hoje**. A lista de inspeções e os dois CSV (por inspeção e dos itens) mostram o nome do local atual, não a cópia.
 - **Número do processo:** texto livre, sem validação de formato e não único. Inspeções criadas antes do campo existir ficam com o número vazio ("—") até serem editadas; o banco antigo é atualizado sozinho na inicialização da API (coluna adicionada sem perder dados).
 - **Lista:** mostra até 100 inspeções por consulta (sem paginação na tela).
 - **Regras do fluxo:** só se fecha inspeção Em andamento; só se cancela inspeção Aberta; inspeção finalizada ou cancelada não pode ser reaberta nem editada; inspeção agendada para o futuro não aceita item respondido (P1).
@@ -200,6 +202,7 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 - **Banco existente:** migração automática e idempotente (veja [Atualizando um banco existente](#atualizando-um-banco-existente-migração)).
 - **Correções encontradas na verificação:** o rodapé do relatório cobria conteúdo no PDF (passou para as caixas de margem do `@page`); a tabela do checklist deixava linhas órfãs entre páginas; as fotos de exemplo saíam com quadrados no "Í" e no "—".
 - **Testes:** backend 229 → 334, frontend 59 → 124 e E2E 11 → 14 passos (mais PDFs do relatório). Os números subiram por causa dos testes novos; nenhum teste existente foi relaxado. Os que mudaram só refletem contrato novo (campo obrigatório, colunas do CSV, rótulos das datas).
+- **Depois da rodada (Parte B):** a exportação dos itens do checklist virou o botão **Exportar itens (CSV)** (`GET /api/v1/exportacao/itens.csv`), sem alterar o CSV por inspeção; a regra de vistoria antes do agendamento foi mantida e `respondido_em` ficou para depois. Backend 334 → 348 e frontend 124 → 125 testes.
 - **Vercel:** cada push em `main` gera um deploy de produção (a integração com o GitHub está ativa; o push desta rodada gerou um deploy `READY`). Para publicar sem push use `vercel deploy --prod` a partir da raiz (veja a seção da Vercel). `VITE_API_URL` aponta para `127.0.0.1`, então o site só funciona no computador onde o backend roda.
 
 ## Pendências do projeto
@@ -207,5 +210,5 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 - **Documentação M0 não escrita:** `docs/requisitos.md`, `docs/criterios-aceite.md`, as ADRs e `docs/migracao-postgresql.md` não existem; o escopo vale como está no handoff.
 - **Matriz CA01–CA85 incompleta:** os critérios cobertos por teste estão nos arquivos de evidência, mas a matriz final (sprint S4) não foi montada.
 - **Licença e visibilidade do repositório (P10):** indefinidas.
-- **Decisões de regra aguardando você (Parte B):** (B1) vistoria antes da data agendada, hoje bloqueada com aviso; (B2) campo `respondido_em` por item; (B3) exportação CSV dos itens do checklist. As opções, prós e contras estão em `PB1` a `PB3` na seção 9 do handoff; nada disso foi implementado.
+- **Parte B decidida (23/10/2026):** (B1) a regra de vistoria antes da data agendada **fica como está**, com o aviso preventivo; (B2) o campo `respondido_em` por item foi **adiado** (`data_realizacao` e `fechado_em` cobrem o relatório); (B3) a exportação dos itens do checklist foi **implementada** como arquivo separado. Detalhes em `PB1` a `PB3` no handoff.
 - As demais pendências (P1–P9) e os padrões adotados estão na seção 9 do handoff; P11 (versões) está resolvida em [Instalação](#instalação).

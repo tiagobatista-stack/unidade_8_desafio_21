@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Comece por **`docs/SPEC_SDD.md`** (especificação SDD: princípios invariantes, requisitos, verificação, decisões, backlog e prompt de retomada); o texto normativo completo das regras está no `HANDOFF_CLAUDE_CODE.md`.
+
 ## Estado atual do repositório
 
 "Inspeções Simuladas" (laboratório SEMA/MT, **dados 100% fictícios**). Backend (`backend/`), frontend (`frontend/`) e E2E (`e2e/`) estão implementados; faltam a documentação M0 (`docs/requisitos.md`, ADRs etc.) e a matriz CA01–CA110 da S4. O status das sprints está na seção 10 do handoff; evidências em `docs/evidencias/`.
@@ -41,7 +43,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Relatório: `GET /inspecoes/{id}/relatorio` (backend monta tudo, inclusive a regra do resultado) e `pages/RelatorioPage.tsx`. A impressão usa `@media print` e uma regra `@page` injetada pela página (rodapé e marca de prévia em caixas de margem); `position: fixed` NÃO serve para rodapé (cobriu conteúdo no PDF). Nada de biblioteca de PDF no backend sem consultar o usuário.
 - Migração sem Alembic: `database._garantir_colunas` (ADD COLUMN e índices) + `services/migracao_dados.preencher_legado` (cópia e numeração das finalizadas antigas), ambos idempotentes e chamados na subida da API.
 - Dados 100% fictícios no seed, testes e capturas (LGPD): proprietários "… Fictício", telefones `(65) 90000-000N`, CAR `MT-5107925-0000…`.
-- Regras de B (vistoria antes do agendamento, `respondido_em`, exportação dos itens) aguardam decisão do usuário (PB1–PB3 no handoff): não implementar sem ele.
+- Parte B decidida: vistoria antes do agendamento **fica bloqueada** (aviso preventivo, não relaxar o CHECK de datas); `respondido_em` por item **adiado** (não implementar sem pedido); exportação dos itens **feita** em `export_itens_service` (CSV separado, `/exportacao/itens.csv`, sem alterar `/exportacao/inspecoes.csv`).
 - Formulários: todo input/select/textarea com `id`, `name` e `label htmlFor`; há teste genérico (`correcoes-a.test.tsx`) que quebra se faltar algum.
 - Frontend publicado na Vercel com backend local: `VITE_API_URL` (build) e `CORS_ORIGINS` (backend); detalhes no README.
 - Seed de testes é fixture (S1A); o endpoint `POST /utilitarios/carregar-exemplos` só existe na S3 (409 `BANCO_JA_POVOADO` se já houver dados).
