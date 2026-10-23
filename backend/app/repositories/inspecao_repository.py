@@ -3,7 +3,7 @@ from datetime import date
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Inspecao, ModeloItem
+from app.models import FotoVistoria, Inspecao, ModeloItem
 
 
 def obter(db: Session, inspecao_id: int) -> Inspecao | None:
@@ -46,4 +46,13 @@ def listar(
         .offset((pagina - 1) * tamanho)
         .limit(tamanho)
     )
-    return list(db.scalars(consulta).unique()), total
+    linhas = list(db.scalars(consulta).unique())
+    ids = [i.id for i in linhas]
+    contagens = dict(
+        db.execute(
+            select(FotoVistoria.inspecao_id, func.count()).where(FotoVistoria.inspecao_id.in_(ids)).group_by(FotoVistoria.inspecao_id)
+        ).all()
+    ) if ids else {}
+    for i in linhas:
+        i.qtd_fotos = contagens.get(i.id, 0)
+    return linhas, total

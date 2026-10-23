@@ -62,3 +62,8 @@ class Inspecao(Base):
         cascade="all, delete-orphan",
         order_by="ItemInspecao.ordem, ItemInspecao.id",
     )
+    fotos = relationship(
+        "FotoVistoria",
+        cascade="all, delete-orphan",
+        order_by="FotoVistoria.ordem, FotoVistoria.id",
+    )

@@ -3,6 +3,7 @@ from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.foto import FotoOut
 from app.schemas.local import LocalOut, LocalResumo
 
 T = TypeVar("T")
@@ -62,6 +63,10 @@ class ItemOut(BaseModel):
     ordem: int
 
 
+class ItemDetalheOut(ItemOut):
+    qtd_fotos: int
+
+
 class ResumoItens(BaseModel):
     total: int
     respondidos: int
@@ -79,6 +84,7 @@ class InspecaoResumo(BaseModel):
     data_realizacao: date | None
     status: StatusT
     resultado: str | None
+    qtd_fotos: int
 
 
 class InspecaoDetalhe(BaseModel):
@@ -98,5 +104,6 @@ class InspecaoDetalhe(BaseModel):
     criado_em: datetime
     atualizado_em: datetime
     fechado_em: datetime | None
-    itens: list[ItemOut]
+    itens: list[ItemDetalheOut]
+    fotos: list[FotoOut]
     resumo_itens: ResumoItens

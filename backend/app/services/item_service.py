@@ -84,6 +84,9 @@ def remover(db: Session, inspecao_id: int, item_id: int) -> None:
         raise ErroNegocio(
             "ITEM_DE_MODELO_NAO_REMOVIVEL", "Item do modelo não pode ser removido.", 409
         )
+    for foto in inspecao.fotos:  # RN29: a foto permanece, sem vínculo
+        if foto.item_inspecao_id == item.id:
+            foto.item_inspecao_id = None
     inspecao.itens.remove(item)
     inspecao.atualizado_em = clock.agora()
     db.commit()

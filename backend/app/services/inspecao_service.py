@@ -47,8 +47,21 @@ def resumo_itens(inspecao: Inspecao) -> dict:
 
 
 def detalhe(inspecao: Inspecao) -> dict:
-    return {**{c.key: getattr(inspecao, c.key) for c in Inspecao.__table__.columns},
-            "local": inspecao.local, "itens": inspecao.itens, "resumo_itens": resumo_itens(inspecao)}
+    from app.services.foto_service import foto_dict
+
+    por_item: dict[int, int] = {}
+    for f in inspecao.fotos:
+        if f.item_inspecao_id is not None:
+            por_item[f.item_inspecao_id] = por_item.get(f.item_inspecao_id, 0) + 1
+    itens = [
+        {**{c.key: getattr(i, c.key) for c in ItemInspecao.__table__.columns}, "qtd_fotos": por_item.get(i.id, 0)}
+        for i in inspecao.itens
+    ]
+    return {
+        **{c.key: getattr(inspecao, c.key) for c in Inspecao.__table__.columns},
+        "local": inspecao.local, "itens": itens, "fotos": [foto_dict(f) for f in inspecao.fotos],
+        "resumo_itens": resumo_itens(inspecao),
+    }
 
 
 def _local_valido(db: Session, local_id: int):
