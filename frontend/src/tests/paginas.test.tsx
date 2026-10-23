@@ -163,9 +163,9 @@ describe("Detalhe e checklist", () => {
     instalarApi(rota("GET", "/inspecoes/4", { corpo: inspecao({ status: "ABERTA" }) }));
     renderizar("/inspecoes/4");
     expect(await screen.findByRole("heading", { name: "INS-004" })).toBeInTheDocument();
-    const dados = screen.getByText("Agendamento").closest("div")!;
+    const dados = screen.getByText("Data de agendamento (planejada)").closest("div")!;
     expect(dados).toHaveTextContent("20/10/2026");
-    expect(screen.getByText("Realização").closest("div")).toHaveTextContent("—");
+    expect(screen.getByText("Data de realização (vistoria em campo)").closest("div")).toHaveTextContent("—");
     expect(screen.getByText("Resultado").closest("div")).toHaveTextContent("—");
     expect(screen.getByText(/-10.42318, -58.71264/)).toBeInTheDocument();
     expect(screen.getAllByTestId(/^item-/)).toHaveLength(3);

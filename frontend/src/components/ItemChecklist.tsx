@@ -7,12 +7,14 @@ interface Props {
   item: Item;
   editavel: boolean;
   destacado?: string;
+  /** Agendamento futuro: a situação só pode ser registrada depois de reagendar (a API também bloqueia). */
+  situacaoBloqueada?: boolean;
   onSituacao: (situacao: Situacao) => void;
   onObservacao: (observacao: string) => void;
   onRemover: () => void;
 }
 
-export function ItemChecklist({ item, editavel, destacado, onSituacao, onObservacao, onRemover }: Props) {
+export function ItemChecklist({ item, editavel, situacaoBloqueada, destacado, onSituacao, onObservacao, onRemover }: Props) {
   const [obs, setObs] = useState(item.observacao ?? "");
   useEffect(() => setObs(item.observacao ?? ""), [item.observacao]);
   const alterada = obs !== (item.observacao ?? "");
@@ -27,9 +29,13 @@ export function ItemChecklist({ item, editavel, destacado, onSituacao, onObserva
       {destacado && <p className="item-motivo" role="note">{destacado}</p>}
       {editavel ? (
         <div className="item-campos">
-          <label>
+          <label htmlFor={`item-${item.id}-situacao`}>
             Situação
             <select
+              id={`item-${item.id}-situacao`}
+              name={`item-${item.id}-situacao`}
+              disabled={situacaoBloqueada}
+              title={situacaoBloqueada ? "Reagende a inspeção para registrar a situação antes da data agendada." : undefined}
               aria-label={`Situação de ${item.descricao}`}
               value={item.situacao}
               onChange={(e) => onSituacao(e.target.value as Situacao)}
@@ -39,9 +45,11 @@ export function ItemChecklist({ item, editavel, destacado, onSituacao, onObserva
               ))}
             </select>
           </label>
-          <label className="campo-largo">
+          <label className="campo-largo" htmlFor={`item-${item.id}-observacao`}>
             Observação
             <textarea
+              id={`item-${item.id}-observacao`}
+              name={`item-${item.id}-observacao`}
               aria-label={`Observação de ${item.descricao}`}
               rows={2}
               value={obs}

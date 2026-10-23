@@ -75,20 +75,20 @@ export function VisualizadorFoto({ inspecaoId, fotos, itens, indice, editavel, o
         </>
       ) : (
         <div className="item-campos coluna">
-          <label>
+          <label htmlFor="foto-editar-anotacao">
             Anotação *
-            <textarea aria-label="Editar anotação" rows={4} value={anotacao} onChange={(e) => setAnotacao(e.target.value)} />
+            <textarea id="foto-editar-anotacao" name="foto-editar-anotacao" aria-label="Editar anotação" rows={4} value={anotacao} onChange={(e) => setAnotacao(e.target.value)} />
           </label>
           <span className={anotacao.length > LIMITE_ANOTACAO ? "contador excedido" : "contador"}>
             {anotacao.length}/{LIMITE_ANOTACAO}
           </span>
-          <label>
+          <label htmlFor="foto-editar-legenda">
             Legenda
-            <input aria-label="Editar legenda" value={legenda} onChange={(e) => setLegenda(e.target.value)} />
+            <input id="foto-editar-legenda" name="foto-editar-legenda" aria-label="Editar legenda" value={legenda} onChange={(e) => setLegenda(e.target.value)} />
           </label>
-          <label>
+          <label htmlFor="foto-editar-vinculo">
             Item
-            <select aria-label="Editar vínculo" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+            <select id="foto-editar-vinculo" name="foto-editar-vinculo" aria-label="Editar vínculo" value={itemId} onChange={(e) => setItemId(e.target.value)}>
               <option value="">Sem vínculo</option>
               {itens.map((i) => (
                 <option key={i.id} value={i.id}>{i.descricao}</option>

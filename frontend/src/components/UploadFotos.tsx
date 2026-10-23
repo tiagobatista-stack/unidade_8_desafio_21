@@ -83,8 +83,10 @@ export function UploadFotos({ inspecaoId, itens, onEnviada }: Props) {
         onDragLeave={() => setArrastando(false)}
         onDrop={(e) => { e.preventDefault(); setArrastando(false); adicionar(e.dataTransfer.files); }}
       >
-        <p>Arraste imagens (JPEG, PNG ou WebP) aqui ou</p>
+        <label htmlFor="fotos-arquivo">Arraste imagens (JPEG, PNG ou WebP) aqui ou escolha os arquivos:</label>
         <input
+          id="fotos-arquivo"
+          name="fotos-arquivo"
           ref={entrada}
           type="file"
           multiple
@@ -103,9 +105,11 @@ export function UploadFotos({ inspecaoId, itens, onEnviada }: Props) {
                 {p.preview && <img src={p.preview} alt="" className="miniatura-pendente" />}
                 <div className="pendente-campos">
                   <p className="nome-arquivo">{p.arquivo.name}</p>
-                  <label>
+                  <label htmlFor={`foto-${p.id}-anotacao`}>
                     O que foi observado nesta foto? *
                     <textarea
+                      id={`foto-${p.id}-anotacao`}
+                      name={`foto-${p.id}-anotacao`}
                       aria-label={`Anotação de ${p.arquivo.name}`}
                       rows={2}
                       value={p.anotacao}
@@ -116,17 +120,21 @@ export function UploadFotos({ inspecaoId, itens, onEnviada }: Props) {
                   <span className={p.anotacao.length > LIMITE_ANOTACAO ? "contador excedido" : "contador"}>
                     {p.anotacao.length}/{LIMITE_ANOTACAO}
                   </span>
-                  <label>
+                  <label htmlFor={`foto-${p.id}-legenda`}>
                     Legenda (opcional)
                     <input
+                      id={`foto-${p.id}-legenda`}
+                      name={`foto-${p.id}-legenda`}
                       aria-label={`Legenda de ${p.arquivo.name}`}
                       value={p.legenda}
                       onChange={(e) => alterar(p.id, { legenda: e.target.value })}
                     />
                   </label>
-                  <label>
+                  <label htmlFor={`foto-${p.id}-item`}>
                     Item (opcional)
                     <select
+                      id={`foto-${p.id}-item`}
+                      name={`foto-${p.id}-item`}
                       aria-label={`Item de ${p.arquivo.name}`}
                       value={p.itemId}
                       onChange={(e) => alterar(p.id, { itemId: e.target.value })}

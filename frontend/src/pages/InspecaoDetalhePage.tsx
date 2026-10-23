@@ -10,7 +10,7 @@ import { ItemChecklist } from "../components/ItemChecklist";
 import { ModalCancelar, ModalFechar } from "../components/ModaisInspecao";
 import { UploadFotos } from "../components/UploadFotos";
 import { useInspecao, useInvalidarTudo } from "../hooks/useDados";
-import { formatarData, rotuloResultado, rotuloStatus, somenteLeitura } from "../utils/formatar";
+import { formatarData, formatarDataHora, rotuloResultado, rotuloStatus, somenteLeitura } from "../utils/formatar";
 
 export default function InspecaoDetalhePage() {
   const id = Number(useParams().id);
@@ -58,13 +58,16 @@ export default function InspecaoDetalhePage() {
         <Selo tipo={insp.status}>{rotuloStatus(insp.status)}</Selo>
         {leitura && <span className="dica">Somente leitura</span>}
       </header>
+      {insp.status === "FINALIZADA" && insp.fechado_em && (
+        <p className="concluido-em" data-testid="concluido-em">Checklist concluído em {formatarDataHora(insp.fechado_em)}</p>
+      )}
 
       <dl className="dados">
         <div><dt>Processo</dt><dd data-testid="numero-processo">{insp.numero_processo ?? "—"}</dd></div>
         <div><dt>Local</dt><dd>{insp.local.nome} — {insp.local.municipio}</dd></div>
         <div><dt>Coordenadas</dt><dd>{insp.local.latitude}, {insp.local.longitude}</dd></div>
-        <div><dt>Agendamento</dt><dd>{formatarData(insp.data_agendamento)}</dd></div>
-        <div><dt>Realização</dt><dd>{formatarData(insp.data_realizacao)}</dd></div>
+        <div><dt>Data de agendamento (planejada)</dt><dd>{formatarData(insp.data_agendamento)}</dd></div>
+        <div><dt>Data de realização (vistoria em campo)</dt><dd>{formatarData(insp.data_realizacao)}</dd></div>
         <div><dt>Resultado</dt><dd>{rotuloResultado(insp.resultado)}</dd></div>
         <div><dt>Objetivo</dt><dd className="texto-puro">{insp.objetivo}</dd></div>
         <div><dt>Observações</dt><dd><TextoPuro valor={insp.observacoes} /></dd></div>
@@ -80,21 +83,44 @@ export default function InspecaoDetalhePage() {
           {insp.campos_editaveis.length > 0 && (
             <Link className="botao secundario" to={`/inspecoes/${id}/editar`}>Editar inspeção</Link>
           )}
-          <button type="button" onClick={() => { setErroAcao(null); setModal("fechar"); }}>Fechar inspeção</button>
+          <button
+            type="button"
+            disabled={Boolean(insp.fechamento_bloqueado_motivo)}
+            aria-describedby={insp.fechamento_bloqueado_motivo ? "motivo-fechar" : undefined}
+            onClick={() => { setErroAcao(null); setModal("fechar"); }}
+          >
+            Fechar inspeção
+          </button>
           <button type="button" className="perigo" onClick={() => { setErroAcao(null); setModal("cancelar"); }}>Cancelar inspeção</button>
         </div>
+      )}
+      {!leitura && insp.fechamento_bloqueado_motivo && (
+        <p id="motivo-fechar" className="dica" data-testid="motivo-fechar">{insp.fechamento_bloqueado_motivo}</p>
       )}
 
       <section aria-labelledby="titulo-checklist" className="cartao">
         <h2 id="titulo-checklist">
           Checklist <small>({insp.resumo_itens.respondidos}/{insp.resumo_itens.total} respondidos, {insp.resumo_itens.nao_conformes} não conformes)</small>
         </h2>
+        {insp.status === "ABERTA" && (
+          <div role="note" className="alerta alerta-info" data-testid="aviso-inicio">
+            A inspeção passa para <strong>Em andamento</strong> quando você registrar a situação do primeiro item.
+            Salvar só uma observação não inicia a inspeção.
+          </div>
+        )}
+        {insp.registro_bloqueado_motivo && (
+          <div role="alert" className="alerta alerta-aviso" data-testid="aviso-agendamento-futuro">
+            {insp.registro_bloqueado_motivo}{" "}
+            <Link to={`/inspecoes/${id}/editar`}>Editar inspeção</Link>
+          </div>
+        )}
         <ul className="itens">
           {insp.itens.map((it) => (
             <ItemChecklist
               key={it.id}
               item={it}
               editavel={!leitura}
+              situacaoBloqueada={Boolean(insp.registro_bloqueado_motivo)}
               destacado={motivoPorItem.get(it.id)}
               onSituacao={(s: Situacao) => executar(() => api.atualizarItem(id, it.id, { situacao: s }))}
               onObservacao={(o) => executar(() => api.atualizarItem(id, it.id, { observacao: o }))}
@@ -110,7 +136,8 @@ export default function InspecaoDetalhePage() {
               if (novoItem.trim()) executar(() => api.adicionarItem(id, novoItem), () => setNovoItem(""));
             }}
           >
-            <input aria-label="Descrição do item avulso" placeholder="Novo item avulso" value={novoItem} onChange={(e) => setNovoItem(e.target.value)} />
+            <label htmlFor="detalhe-item-avulso" className="sr-only">Descrição do item avulso</label>
+            <input id="detalhe-item-avulso" name="detalhe-item-avulso" aria-label="Descrição do item avulso" placeholder="Novo item avulso" value={novoItem} onChange={(e) => setNovoItem(e.target.value)} />
             <button type="submit" disabled={!novoItem.trim() || ocupado}>Adicionar item</button>
           </form>
         )}

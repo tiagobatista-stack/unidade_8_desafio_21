@@ -15,6 +15,7 @@ from app.domain.constantes import (
 )
 from app.domain.datas import validar_realizacao
 from app.domain.fechamento import problemas_fechamento
+from app.domain.orientacoes import MSG_NAO_INICIADA, motivo_fechamento_bloqueado, motivo_registro_bloqueado
 from app.domain.resultado import calcular_resultado
 from app.domain.texto import sanear
 from app.domain.transicoes import exigir_editavel, validar_transicao
@@ -63,6 +64,8 @@ def detalhe(inspecao: Inspecao) -> dict:
         **{c.key: getattr(inspecao, c.key) for c in Inspecao.__table__.columns},
         "local": inspecao.local, "itens": itens, "fotos": [foto_dict(f) for f in inspecao.fotos],
         "campos_editaveis": sorted(CAMPOS_EDITAVEIS.get(inspecao.status, set())),
+        "fechamento_bloqueado_motivo": motivo_fechamento_bloqueado(inspecao.status),
+        "registro_bloqueado_motivo": motivo_registro_bloqueado(inspecao.status, inspecao.data_agendamento, clock.hoje()),
         "resumo_itens": resumo_itens(inspecao),
     }
 
@@ -181,6 +184,8 @@ def cancelar(db: Session, inspecao_id: int, motivo: str) -> Inspecao:
 
 def fechar(db: Session, inspecao_id: int) -> Inspecao:
     inspecao = obter(db, inspecao_id)
+    if inspecao.status == Status.ABERTA:  # P3, com orientação do que fazer (código estável TRANSICAO_INVALIDA)
+        raise ErroNegocio("TRANSICAO_INVALIDA", MSG_NAO_INICIADA, 409)
     validar_transicao(inspecao.status, Status.FINALIZADA)  # P3: só fecha EM_ANDAMENTO
     detalhes = problemas_fechamento(inspecao.itens)  # RN04, RN05
     if detalhes:

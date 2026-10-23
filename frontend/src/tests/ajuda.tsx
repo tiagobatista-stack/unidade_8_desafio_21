@@ -91,10 +91,16 @@ const EDITAVEIS: Record<string, string[]> = {
   CANCELADA: [],
 };
 
+export const MSG_NAO_INICIADA =
+  "A inspeção ainda não foi iniciada. Registre a situação de pelo menos um item do checklist antes de fechar.";
+
 export function inspecao(parcial: Partial<InspecaoDetalhe> = {}): InspecaoDetalhe {
   const itens = parcial.itens ?? [item(1), item(2), item(3)];
   return {
-    id: 4, codigo: "INS-004", numero_processo: "SEMA-PRO-2026/12345", campos_editaveis: EDITAVEIS[parcial.status ?? "ABERTA"], local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
+    id: 4, codigo: "INS-004", numero_processo: "SEMA-PRO-2026/12345", campos_editaveis: EDITAVEIS[parcial.status ?? "ABERTA"],
+    // como a API: só em ABERTA há motivo para não fechar; o aviso de agendamento futuro vem de cada teste
+    fechamento_bloqueado_motivo: (parcial.status ?? "ABERTA") === "ABERTA" ? MSG_NAO_INICIADA : null,
+    registro_bloqueado_motivo: null, local, objetivo: "Vistoria de rotina", observacoes: null, observacoes_vistoria: null,
     data_agendamento: "2026-10-20", data_realizacao: null, status: "ABERTA", resultado: null, motivo_cancelamento: null,
     fechado_em: null, itens, fotos: [],
     resumo_itens: { total: itens.length, respondidos: itens.filter((i) => i.situacao !== "NAO_RESPONDIDO").length, nao_conformes: itens.filter((i) => i.situacao === "NAO_CONFORME").length },

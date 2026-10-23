@@ -56,30 +56,30 @@ export function ModalNovoLocal({ onCriado, onCancelar }: Props) {
   return (
     <Modal titulo="Novo local" onFechar={onCancelar}>
       <form onSubmit={salvar} noValidate className="formulario">
-        <label>
+        <label htmlFor="local-nome">
           Nome *
-          <input aria-label="Nome do local" value={campos.nome} onChange={(e) => mudar("nome", e.target.value)} />
+          <input id="local-nome" name="local-nome" aria-label="Nome do local" value={campos.nome} onChange={(e) => mudar("nome", e.target.value)} />
           {aviso("nome", "Informe o nome.")}
         </label>
-        <label>
+        <label htmlFor="local-municipio">
           Município *
-          <input aria-label="Município do local" value={campos.municipio} onChange={(e) => mudar("municipio", e.target.value)} />
+          <input id="local-municipio" name="local-municipio" aria-label="Município do local" value={campos.municipio} onChange={(e) => mudar("municipio", e.target.value)} />
           {aviso("municipio", "Informe o município.")}
         </label>
-        <label>
+        <label htmlFor="local-tipo">
           Tipo *
-          <input aria-label="Tipo do local" placeholder="Ex.: Propriedade rural" value={campos.tipo} onChange={(e) => mudar("tipo", e.target.value)} />
+          <input id="local-tipo" name="local-tipo" aria-label="Tipo do local" placeholder="Ex.: Propriedade rural" value={campos.tipo} onChange={(e) => mudar("tipo", e.target.value)} />
           {aviso("tipo", "Informe o tipo.")}
         </label>
         <div className="duas-colunas">
-          <label>
+          <label htmlFor="local-latitude">
             Latitude *
-            <input aria-label="Latitude do local" inputMode="decimal" placeholder="-10.42318" value={campos.latitude} onChange={(e) => mudar("latitude", e.target.value)} />
+            <input id="local-latitude" name="local-latitude" aria-label="Latitude do local" inputMode="decimal" placeholder="-10.42318" value={campos.latitude} onChange={(e) => mudar("latitude", e.target.value)} />
             {aviso("latitude", "Informe um número.")}
           </label>
-          <label>
+          <label htmlFor="local-longitude">
             Longitude *
-            <input aria-label="Longitude do local" inputMode="decimal" placeholder="-58.71264" value={campos.longitude} onChange={(e) => mudar("longitude", e.target.value)} />
+            <input id="local-longitude" name="local-longitude" aria-label="Longitude do local" inputMode="decimal" placeholder="-58.71264" value={campos.longitude} onChange={(e) => mudar("longitude", e.target.value)} />
             {aviso("longitude", "Informe um número.")}
           </label>
         </div>

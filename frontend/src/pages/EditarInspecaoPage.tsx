@@ -79,7 +79,7 @@ export default function EditarInspecaoPage() {
   }
 
   const campo = (rotulo: string, nome: keyof Valores, entrada: JSX.Element, leitura: string) => (
-    <label key={nome}>
+    <label key={nome} htmlFor={pode(nome) ? `editar-${nome}` : undefined}>
       {rotulo}
       {pode(nome) ? entrada : <span className="somente-leitura" data-testid={`leitura-${nome}`}>{leitura || VAZIO}</span>}
     </label>
@@ -98,29 +98,35 @@ export default function EditarInspecaoPage() {
       )}
       <form onSubmit={salvar} noValidate className="formulario">
         {campo("Número do processo", "numero_processo",
-          <input aria-label="Número do processo" placeholder="SEMA-PRO-2026/12345" value={v.numero_processo} onChange={(e) => mudar("numero_processo", e.target.value)} />,
+          <input id="editar-numero_processo" name="editar-numero_processo" aria-label="Número do processo" placeholder="SEMA-PRO-2026/12345" value={v.numero_processo} onChange={(e) => mudar("numero_processo", e.target.value)} />,
           original.numero_processo)}
         {campo("Local", "local_id",
-          <select aria-label="Local" value={v.local_id} onChange={(e) => mudar("local_id", e.target.value)}>
+          <select id="editar-local_id" name="editar-local_id" aria-label="Local" value={v.local_id} onChange={(e) => mudar("local_id", e.target.value)}>
             {locais.data?.dados.map((l) => (
               <option key={l.id} value={l.id}>{l.nome} — {l.municipio}</option>
             ))}
           </select>,
           `${insp.local.nome} — ${insp.local.municipio}`)}
-        {campo("Data de agendamento", "data_agendamento",
-          <input type="date" aria-label="Data de agendamento" value={v.data_agendamento} onChange={(e) => mudar("data_agendamento", e.target.value)} />,
+        {campo("Data de agendamento (planejada)", "data_agendamento",
+          <input id="editar-data_agendamento" name="editar-data_agendamento" type="date" aria-label="Data de agendamento" value={v.data_agendamento} onChange={(e) => mudar("data_agendamento", e.target.value)} />,
           formatarData(insp.data_agendamento))}
-        {campo("Data de realização", "data_realizacao",
-          <input type="date" aria-label="Data de realização" value={v.data_realizacao} onChange={(e) => mudar("data_realizacao", e.target.value)} />,
+        {pode("data_realizacao") && (
+          <p className="dica" data-testid="ajuda-realizacao">
+            A data de realização é o dia em que a vistoria foi feita em campo. Você pode corrigi-la para o dia real; ela não pode
+            ser futura nem anterior à data de agendamento.
+          </p>
+        )}
+        {campo("Data de realização (vistoria em campo)", "data_realizacao",
+          <input id="editar-data_realizacao" name="editar-data_realizacao" type="date" aria-label="Data de realização" value={v.data_realizacao} onChange={(e) => mudar("data_realizacao", e.target.value)} />,
           formatarData(insp.data_realizacao))}
         {campo("Objetivo", "objetivo",
-          <input aria-label="Objetivo" value={v.objetivo} onChange={(e) => mudar("objetivo", e.target.value)} />,
+          <input id="editar-objetivo" name="editar-objetivo" aria-label="Objetivo" value={v.objetivo} onChange={(e) => mudar("objetivo", e.target.value)} />,
           insp.objetivo)}
         {campo("Observações", "observacoes",
-          <textarea aria-label="Observações" rows={3} value={v.observacoes} onChange={(e) => mudar("observacoes", e.target.value)} />,
+          <textarea id="editar-observacoes" name="editar-observacoes" aria-label="Observações" rows={3} value={v.observacoes} onChange={(e) => mudar("observacoes", e.target.value)} />,
           original.observacoes)}
         {campo("Observações da vistoria", "observacoes_vistoria",
-          <textarea aria-label="Observações da vistoria" rows={4} value={v.observacoes_vistoria} onChange={(e) => mudar("observacoes_vistoria", e.target.value)} />,
+          <textarea id="editar-observacoes_vistoria" name="editar-observacoes_vistoria" aria-label="Observações da vistoria" rows={4} value={v.observacoes_vistoria} onChange={(e) => mudar("observacoes_vistoria", e.target.value)} />,
           original.observacoes_vistoria)}
         {aviso && <div role="status" className="alerta alerta-aviso">{aviso}</div>}
         <MensagemErro erro={erro} />

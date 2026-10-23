@@ -48,9 +48,9 @@ export default function InspecoesPage() {
         </p>
       )}
       <div className="filtros">
-        <label>
+        <label htmlFor="lista-status">
           Status
-          <select aria-label="Filtrar por status" value={status} onChange={(e) => mudar("status", e.target.value)}>
+          <select id="lista-status" name="lista-status" aria-label="Filtrar por status" value={status} onChange={(e) => mudar("status", e.target.value)}>
             <option value="">Todos</option>
             <option value="ATIVAS">{GRUPOS.ATIVAS.rotulo}</option>
             <option value="PENDENTES">{GRUPOS.PENDENTES.rotulo}</option>
@@ -59,9 +59,9 @@ export default function InspecoesPage() {
             ))}
           </select>
         </label>
-        <label>
+        <label htmlFor="lista-numero-processo">
           Nº do processo
-          <input
+          <input id="lista-numero-processo" name="lista-numero-processo"
             type="search"
             aria-label="Buscar por número do processo"
             placeholder="SEMA-PRO-2026/12345"
@@ -69,13 +69,13 @@ export default function InspecoesPage() {
             onChange={(e) => mudar("numero_processo", e.target.value)}
           />
         </label>
-        <label>
+        <label htmlFor="lista-data-inicio">
           Agendamento de
-          <input type="date" aria-label="Data inicial" value={filtros.data_inicio} onChange={(e) => mudar("data_inicio", e.target.value)} />
+          <input id="lista-data-inicio" name="lista-data-inicio" type="date" aria-label="Data inicial" value={filtros.data_inicio} onChange={(e) => mudar("data_inicio", e.target.value)} />
         </label>
-        <label>
+        <label htmlFor="lista-data-fim">
           até
-          <input type="date" aria-label="Data final" value={filtros.data_fim} onChange={(e) => mudar("data_fim", e.target.value)} />
+          <input id="lista-data-fim" name="lista-data-fim" type="date" aria-label="Data final" value={filtros.data_fim} onChange={(e) => mudar("data_fim", e.target.value)} />
         </label>
       </div>
       {isLoading && <Carregando />}

@@ -53,14 +53,14 @@ export default function NovaInspecaoPage() {
       <h1>Nova inspeção</h1>
       <MensagemErro erro={locais.error} />
       <form onSubmit={enviar} noValidate className="formulario">
-        <label>
+        <label htmlFor="nova-numero-processo">
           Número do processo *
-          <input aria-label="Número do processo" placeholder="SEMA-PRO-2026/12345" value={numeroProcesso} onChange={(e) => setNumeroProcesso(e.target.value)} />
+          <input id="nova-numero-processo" name="nova-numero-processo" aria-label="Número do processo" placeholder="SEMA-PRO-2026/12345" value={numeroProcesso} onChange={(e) => setNumeroProcesso(e.target.value)} />
           {tentou && faltando.processo && <span className="campo-erro">Informe o número do processo.</span>}
         </label>
-        <label>
+        <label htmlFor="nova-local">
           Local *
-          <select aria-label="Local" value={localId} onChange={(e) => setLocalId(e.target.value)}>
+          <select id="nova-local" name="nova-local" aria-label="Local" value={localId} onChange={(e) => setLocalId(e.target.value)}>
             <option value="">Selecione…</option>
             {locais.data?.dados.map((l) => (
               <option key={l.id} value={l.id}>{l.nome} — {l.municipio}</option>
@@ -75,28 +75,28 @@ export default function NovaInspecaoPage() {
           )}
         </div>
         <div className="duas-colunas">
-          <label>
+          <label htmlFor="nova-latitude">
             Latitude
-            <input aria-label="Latitude" readOnly value={local ? local.latitude : ""} />
+            <input id="nova-latitude" name="nova-latitude" aria-label="Latitude" readOnly value={local ? local.latitude : ""} />
           </label>
-          <label>
+          <label htmlFor="nova-longitude">
             Longitude
-            <input aria-label="Longitude" readOnly value={local ? local.longitude : ""} />
+            <input id="nova-longitude" name="nova-longitude" aria-label="Longitude" readOnly value={local ? local.longitude : ""} />
           </label>
         </div>
-        <label>
+        <label htmlFor="nova-data-agendamento">
           Data de agendamento *
-          <input type="date" aria-label="Data de agendamento" value={agendamento} onChange={(e) => setAgendamento(e.target.value)} />
+          <input id="nova-data-agendamento" name="nova-data-agendamento" type="date" aria-label="Data de agendamento" value={agendamento} onChange={(e) => setAgendamento(e.target.value)} />
           {tentou && faltando.agendamento && <span className="campo-erro">Informe a data de agendamento.</span>}
         </label>
-        <label>
+        <label htmlFor="nova-objetivo">
           Objetivo *
-          <input aria-label="Objetivo" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
+          <input id="nova-objetivo" name="nova-objetivo" aria-label="Objetivo" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
           {tentou && faltando.objetivo && <span className="campo-erro">Informe o objetivo.</span>}
         </label>
-        <label>
+        <label htmlFor="nova-observacoes">
           Observações
-          <textarea aria-label="Observações" rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+          <textarea id="nova-observacoes" name="nova-observacoes" aria-label="Observações" rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
         </label>
         <MensagemErro erro={erro} />
         <div className="acoes">

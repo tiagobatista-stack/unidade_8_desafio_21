@@ -109,6 +109,8 @@ class InspecaoDetalhe(BaseModel):
     atualizado_em: datetime
     fechado_em: datetime | None
     campos_editaveis: list[str]
+    fechamento_bloqueado_motivo: str | None
+    registro_bloqueado_motivo: str | None
     itens: list[ItemDetalheOut]
     fotos: list[FotoOut]
     resumo_itens: ResumoItens

@@ -7,6 +7,13 @@ export function formatarData(iso: string | null | undefined): string {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : VAZIO;
 }
 
+/** "2026-10-23T17:05:00" -> "23/10/2026 17:05" (sem passar por Date, para não sofrer com fuso). */
+export function formatarDataHora(iso: string | null | undefined): string {
+  if (!iso) return VAZIO;
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : VAZIO;
+}
+
 export const ROTULO_STATUS: Record<string, string> = {
   ABERTA: "Aberta",
   EM_ANDAMENTO: "Em andamento",

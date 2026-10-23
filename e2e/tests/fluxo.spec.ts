@@ -158,6 +158,8 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await expect(page.getByRole("heading", { name: "INS-006" })).toBeVisible();
     await expect(page.getByTestId(/^item-/)).toHaveCount(6);
     await expect(page.getByTestId("numero-processo")).toHaveText("SEMA-PRO-2026/12345");
+    await expect(page.getByTestId("aviso-agendamento-futuro")).toContainText("Vistoria agendada para 30/10/2026");
+    await expect(page.getByRole("button", { name: "Fechar inspeção" })).toBeDisabled();
     await expect(page.getByText("Frigorífico Boa Terra (fictício) — Sinop")).toBeVisible();
     await tela(page, "detalhe-inspecao-aberta");
     await page.getByRole("button", { name: "Cancelar inspeção" }).click();
@@ -172,13 +174,19 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await expect(indicador(page, "pendencias")).toContainText("2");
   });
 
-  test("INS-005: registrar item em vistoria agendada para o futuro é bloqueado (P1)", async ({ page }) => {
+  test("INS-005: agendamento futuro mostra o aviso antes de qualquer tentativa e bloqueia a situação (P1)", async ({ page }) => {
     await page.goto("/inspecoes");
     await page.getByRole("link", { name: "INS-005", exact: true }).click();
-    await page.getByLabel(/^Situação de Licença/).selectOption("CONFORME");
-    await expect(page.getByRole("alert")).toContainText("Vistoria agendada para 28/10/2026");
-    await expect(page.getByText("Aberta").first()).toBeVisible();
-    await tela(page, "bloqueio-vistoria-agendada-p1");
+    const aviso = page.getByTestId("aviso-agendamento-futuro");
+    await expect(aviso).toContainText("Vistoria agendada para 28/10/2026");
+    await expect(aviso.getByRole("link", { name: "Editar inspeção" })).toBeVisible();
+    await expect(page.getByLabel(/^Situação de Licença/)).toBeDisabled(); // sem precisar tentar
+    await expect(page.getByTestId("aviso-inicio")).toContainText("quando você registrar a situação do primeiro item");
+    await expect(page.getByRole("button", { name: "Fechar inspeção" })).toBeDisabled();
+    await expect(page.getByTestId("motivo-fechar")).toContainText("A inspeção ainda não foi iniciada");
+    await tela(page, "aviso-agendamento-futuro-e-fechar-desabilitado");
+    await aviso.getByRole("link", { name: "Editar inspeção" }).click();
+    await expect(page.getByRole("heading", { name: "Editar INS-005" })).toBeVisible();
   });
 
   test("INS-004: fechamento bloqueado destaca os itens pendentes", async ({ page }) => {
@@ -247,6 +255,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await expect(page.getByText("Somente leitura", { exact: true })).toBeVisible();
     await expect(page.locator("dt", { hasText: /^Resultado$/ }).locator("..")).toContainText("Aprovada");
     await expect(page.getByRole("button", { name: "Fechar inspeção" })).toHaveCount(0);
+    await expect(page.getByTestId("concluido-em")).toHaveText(/^Checklist concluído em \d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
     await tela(page, "inspecao-finalizada-somente-leitura");
     await irPara(page, "Painel");
     await expect(indicador(page, "inspecoes")).toContainText("5");

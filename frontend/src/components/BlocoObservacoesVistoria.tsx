@@ -18,7 +18,8 @@ export function BlocoObservacoesVistoria({ valor, editavel, salvando, onSalvar }
       <h2 id="titulo-obs-vistoria">Observações da vistoria (o que foi visualizado)</h2>
       {editavel ? (
         <>
-          <textarea
+          <label htmlFor="obs-vistoria" className="sr-only">Observações da vistoria</label>
+          <textarea id="obs-vistoria" name="obs-vistoria"
             aria-label="Observações da vistoria"
             rows={5}
             value={texto}

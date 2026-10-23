@@ -68,6 +68,8 @@ export interface InspecaoDetalhe {
   codigo: string;
   numero_processo: string | null;
   campos_editaveis: string[];
+  fechamento_bloqueado_motivo: string | null;
+  registro_bloqueado_motivo: string | null;
   local: Local;
   objetivo: string;
   observacoes: string | null;

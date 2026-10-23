@@ -42,9 +42,9 @@ export function ModalCancelar({ codigo, enviando, onConfirmar, onCancelar }: Pro
   const [motivo, setMotivo] = useState("");
   return (
     <Modal titulo={`Cancelar inspeção ${codigo}`} onFechar={onCancelar}>
-      <label>
+      <label htmlFor="cancelar-motivo">
         Motivo do cancelamento *
-        <textarea aria-label="Motivo do cancelamento" rows={3} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+        <textarea id="cancelar-motivo" name="cancelar-motivo" aria-label="Motivo do cancelamento" rows={3} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       </label>
       <div className="acoes">
         <button type="button" className="perigo" disabled={enviando || !motivo.trim()} onClick={() => onConfirmar(motivo)}>
