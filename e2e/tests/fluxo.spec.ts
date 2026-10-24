@@ -414,4 +414,29 @@ test.describe.serial("Fluxo completo do MVP", () => {
     const verif = await (await request.get(`${API}/utilitarios/verificar-fotos`)).json();
     expect(verif.total_inconsistencias).toBe(0);
   });
+  test("Dados para a capa e lavratura: blocos, campos faltando e Copiar tudo igual ao texto da API (R4-S3)", async ({ page, request, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    const lista = (await (await request.get(`${API}/inspecoes?tamanho=100`)).json()).dados;
+    const id = lista.find((i: { codigo: string }) => i.codigo === "INS-001").id;
+    await page.goto(`/inspecoes/${id}`);
+    await page.getByRole("link", { name: "Dados para capa e lavratura" }).click();
+    await expect(page.getByRole("heading", { name: /Dados para a capa e lavratura — INS-001/ })).toBeVisible();
+    const titulos = await page.getByRole("heading", { level: 2 }).allTextContents();
+    expect(titulos).toEqual(["1 – Interessado", "2 – Assunto", "3 – Caracterização do empreendimento", "4 – Equipe técnica", "Atos a lavrar"]);
+    await expect(page.getByTestId("bloco-interessado")).toContainText("Ministério Público do Estado de Mato Grosso");
+    await expect(page.getByTestId("resumo-faltando")).toContainText("2 campos não informados"); // CPF/CNPJ do 2º responsável (capa e atos)
+    await expect(page.getByTestId("campo-faltando").first()).toContainText("Não informado");
+    await tela(page, "dados-capa-e-lavratura");
+    await page.getByRole("button", { name: "Copiar tudo" }).click();
+    await expect(page.getByTestId("aviso-copia")).toContainText("Copiado: todos os dados.");
+    // o Windows entrega a área de transferência com quebras CRLF; o conteúdo é o mesmo
+    const copiado = (await page.evaluate(() => navigator.clipboard.readText())).split("\r\n").join("\n");
+    const esperado = (await (await request.get(`${API}/inspecoes/${id}/dados-capa`)).json()).texto_completo;
+    expect(copiado).toBe(esperado);
+    expect(copiado.split("\n").slice(0, 3)).toEqual([
+      "1 – Interessado:", "Ministério Público do Estado de Mato Grosso - 1ª Promotoria de Justiça Cível", "Comarca de Juína",
+    ]);
+    await page.getByRole("button", { name: "Copiar Requerente" }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("Promotor de Justiça");
+  });
 });

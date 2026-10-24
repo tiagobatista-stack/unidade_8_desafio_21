@@ -103,6 +103,30 @@ export interface Foto {
   url_original: string;
 }
 
+export interface CampoCapaApi {
+  rotulo: string;
+  valor: string; // o valor ou "Não informado"
+  copiar: string;
+  ausente: boolean;
+  faltando: boolean; // vazio e obrigatório para a SEMA
+}
+
+export interface BlocoCapaApi {
+  chave: string;
+  titulo: string;
+  texto: string;
+  campos: CampoCapaApi[];
+}
+
+/** Dados para a capa e a lavratura (GET /inspecoes/{id}/dados-capa). */
+export interface DadosParaCapa {
+  codigo: string;
+  protocolo: string | null;
+  blocos: BlocoCapaApi[];
+  texto_completo: string;
+  campos_faltando: number;
+}
+
 export interface InspecaoDetalhe extends DadosCapa {
   id: number;
   codigo: string;

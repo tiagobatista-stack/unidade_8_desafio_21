@@ -112,6 +112,7 @@ export default function InspecaoDetalhePage() {
 
       <div className="acoes">
         {/* O relatório existe em qualquer status: prévia antes do fechamento, documento numerado depois */}
+        <Link className="botao secundario" to={`/inspecoes/${id}/capa`}>Dados para capa e lavratura</Link>
         <Link className="botao secundario" to={`/inspecoes/${id}/relatorio`}>Gerar relatório</Link>
         {insp.campos_editaveis.length > 0 && (
           <Link className="botao secundario" to={`/inspecoes/${id}/editar`}>

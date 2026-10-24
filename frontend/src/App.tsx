@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
+import CapaPage from "./pages/CapaPage";
 import EditarInspecaoPage from "./pages/EditarInspecaoPage";
 import InspecaoDetalhePage from "./pages/InspecaoDetalhePage";
 import InspecoesPage from "./pages/InspecoesPage";
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/inspecoes/nova" element={<NovaInspecaoPage />} />
           <Route path="/inspecoes/:id" element={<InspecaoDetalhePage />} />
           <Route path="/inspecoes/:id/editar" element={<EditarInspecaoPage />} />
+          <Route path="/inspecoes/:id/capa" element={<CapaPage />} />
           <Route path="/inspecoes/:id/relatorio" element={<RelatorioPage />} />
           <Route path="/locais" element={<LocaisPage />} />
           <Route path="/locais/novo" element={<LocalFormPage />} />

@@ -223,9 +223,9 @@ Toda tela trata estados: carregando, vazio, erro (`mensagem` + `detalhes`). No f
 - [x] R1 — Rodada de melhorias pós-uso (23/10/2026): cartões clicáveis (RN37), botão/página Editar e `campos_editaveis` (RN38), número do processo (RN35, migração leve do banco), filtro por número, `status` repetível na lista e criação de local pela tela (RN36).
 - [x] R2 — Correções de usabilidade (A1–A5), dados do empreendimento (CAR e proprietários, tela Locais), cópia no fechamento e relatório de vistoria numerado e imprimível (RN39–RN46). A Parte B ficou só como opções (PB1–PB3).
 - [x] R3 — Decisões da Parte B (23/10/2026): B1 manter a regra atual, B2 adiado, B3 implementada (CSV separado dos itens do checklist, RN47).
-- [~] R4 — Dados para a capa da SEMA e corpo do relatório (em andamento, 4 sprints): **S1 feita** (modelo de dados, migração, interessado, assunto, equipe, providências, atos, CPF/CNPJ, CEP e endereços; equipe obrigatória para fechar) e **S2 feita** (coordenadas em GMS com máscara e telas Nova/Editar inspeção e Locais). Faltam S3 (página "Dados para a capa e lavratura") e S4 (corpo do relatório, E2E, documentação e PR).
+- [~] R4 — Dados para a capa da SEMA e corpo do relatório (em andamento, 4 sprints): **S1 feita** (modelo de dados, migração, interessado, assunto, equipe, providências, atos, CPF/CNPJ, CEP e endereços; equipe obrigatória para fechar) e **S2 feita** (coordenadas em GMS com máscara e telas Nova/Editar inspeção e Locais). **S3 feita** (página "Dados para a capa e lavratura", com Copiar por campo, bloco e tudo). Falta a S4 (corpo do relatório, E2E, documentação e PR).
 
-Evidências das rodadas: `docs/evidencias/R1-melhorias.md`, `R2-melhorias.md`, `R3-exportacao-itens.md`, `R4-S1-modelo-de-dados.md` e `R4-S2-coordenadas-e-telas.md` (CA → teste; PDFs do relatório e CSVs de exemplo em `docs/evidencias/`).
+Evidências das rodadas: `docs/evidencias/R1-melhorias.md`, `R2-melhorias.md`, `R3-exportacao-itens.md`, `R4-S1-modelo-de-dados.md`, `R4-S2-coordenadas-e-telas.md` e `R4-S3-dados-capa-lavratura.md` (CA → teste; PDFs do relatório e CSVs de exemplo em `docs/evidencias/`).
 
 **Última verificação (23/10/2026):** backend `pytest -q` = **348 passed**; frontend `npm test -- --run` = **125 passed** e `npm run build` ok; E2E Playwright = **14 passed** (telas em `docs/evidencias/telas/`, 2 PDFs do relatório e 2 CSVs de exemplo).
 

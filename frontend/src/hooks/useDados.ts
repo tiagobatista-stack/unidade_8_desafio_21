@@ -8,6 +8,8 @@ export const useLocal = (id: number, habilitado = true) =>
   useQuery({ queryKey: ["locais", id], queryFn: () => api.local(id), enabled: habilitado });
 export const useRelatorio = (id: number) =>
   useQuery({ queryKey: ["inspecoes", "relatorio", id], queryFn: () => api.relatorio(id) });
+export const useDadosCapa = (id: number) =>
+  useQuery({ queryKey: ["inspecoes", "capa", id], queryFn: () => api.dadosCapa(id) });
 export const useInspecoes = (f: FiltrosLista) =>
   useQuery({ queryKey: ["inspecoes", "lista", f], queryFn: () => api.inspecoes(f) });
 export const useInspecao = (id: number) =>
