@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.domain.contato import formatar_telefone
+from app.domain.coordenadas import formatar_gms, formatar_par_gms
 from app.domain.documento import formatar_cep, formatar_cpf_cnpj
 
 
@@ -53,8 +54,10 @@ class LocalIn(BaseModel):
     nome: str
     municipio: str
     tipo: str
-    latitude: float
-    longitude: float
+    latitude: float | None = None  # decimal; ou informe latitude_gms (o GMS vale se vier os dois)
+    longitude: float | None = None
+    latitude_gms: str | None = None  # ex.: 11° 46' 34" S
+    longitude_gms: str | None = None  # ex.: 59° 05' 12" W
     ativo: bool = True
     numero_car: str | None = None
     logradouro: str | None = None
@@ -74,28 +77,44 @@ class _EnderecoOut(BaseModel):
         return formatar_cep(self.cep)
 
 
-class LocalOut(_EnderecoOut):
+class _CoordenadasOut(_EnderecoOut):
+    latitude: float
+    longitude: float
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def latitude_gms(self) -> str:
+        return formatar_gms(self.latitude, "latitude")
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def longitude_gms(self) -> str:
+        return formatar_gms(self.longitude, "longitude")
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def coordenadas_gms(self) -> str:
+        return formatar_par_gms(self.latitude, self.longitude)
+
+
+class LocalOut(_CoordenadasOut):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     nome: str
     municipio: str
     tipo: str
-    latitude: float
-    longitude: float
     ativo: bool
     numero_car: str | None = None
     proprietarios: list[ProprietarioOut] = Field(default_factory=list)
 
 
-class EmpreendimentoOut(_EnderecoOut):
+class EmpreendimentoOut(_CoordenadasOut):
     """Dados do empreendimento exibidos na inspeção (cópia do fechamento quando finalizada)."""
 
     nome: str
     municipio: str
     tipo: str
-    latitude: float
-    longitude: float
     numero_car: str | None = None
     proprietarios: list[ProprietarioOut] = Field(default_factory=list)
 
