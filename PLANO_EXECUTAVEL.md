@@ -481,3 +481,31 @@ git status --short && git log --oneline -5
 **Evidências.** `docs/evidencias/R3-exportacao-itens.md` e o CSV de exemplo gerado pelo E2E.
 
 **Condição de parada.** Parar se a exportação exigir mudar as colunas do CSV atual, se aparecer conflito no `git pull --rebase` ou se faltar credencial no push.
+
+## R4 — Dados para a capa da SEMA e corpo do relatório técnico
+
+**Objetivo.** O sistema da SEMA já gera a capa do relatório técnico (1 Interessado, 2 Assunto, 3 Caracterização do empreendimento, 4 Equipe técnica) e a lavratura dos autos. Este sistema **não gera a capa**: coleta e organiza os dados que a alimentam, para copiar sem redigitar, e gera o **corpo** do relatório, a partir do item 5, para anexar depois da capa.
+
+**Dependências.** R3 concluída. Branch `r4-capa-sema-corpo-relatorio`, PR para a `main` (rascunho a partir da S1, pronto para revisão na S4; **sem merge** feito pelo agente).
+
+**Sprints (uma por vez, com parada para o usuário testar).**
+1. **S1 — modelo de dados e migração (E1, E2, migração do E7):** interessado, assunto, equipe, providências, atos, nº SEMA; endereço, CPF/CNPJ e correspondência; equipe obrigatória para fechar; número dos atos editável após o fechamento. Verificação: `pytest -q`; banco antigo migrado sem perda.
+2. **S2 — coordenadas GMS e telas (E3, E6):** conversão e exibição em GMS, máscara de digitação, telas Nova/Editar inspeção e Locais.
+3. **S3 — página "Dados para a capa e lavratura" (E4):** `GET /inspecoes/{id}/dados-capa` e a página com Copiar por campo, bloco e tudo; "Não informado" destacado.
+4. **S4 — corpo do relatório, E2E, documentação e PR (E5, E7, E8):** corpo a partir do item 5 com cabeçalho mínimo, 5.1–5.3, 6 e 7 opcional; E2E completo no padrão do modelo com PDF em `docs/evidencias/`.
+
+**Prompt para Claude Code (R4).** O texto original da rodada (E1–E8) foi dado pelo usuário no chat; as decisões de execução foram: nome R4 (o texto dizia R3), 4 sprints com parada ao fim de cada uma, push da branch ao fim de cada sprint (nunca na `main`, nunca `--force`), PR em rascunho na S1 e `gh pr ready` na S4, sem merge.
+
+**Comandos de verificação**
+```
+cd backend && pytest -q
+cd ../frontend && npm test -- --run && npm run build
+cd ../e2e && npx playwright test      # também grava o PDF do corpo do relatório e as telas em docs/evidencias/
+git status --short && git log --oneline main..HEAD
+```
+
+**Critérios de aceite.** CA117–CA139 (seção 11 do handoff), RN48–RN55.
+
+**Evidências.** `docs/evidencias/R4-capa-sema-corpo-relatorio.md` (resumo) e `R4-S1`, `R4-S2`, `R4-S3` (por sprint); `relatorio-corpo-R4.pdf` e as telas 41–46.
+
+**Condição de parada.** Parar ao fim de cada sprint; parar se a `main` avançar e o `git pull --rebase origin main` der conflito (mostrar os arquivos); parar antes de qualquer merge.

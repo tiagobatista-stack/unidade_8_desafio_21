@@ -5,10 +5,10 @@
 | Campo | Valor |
 |---|---|
 | Sistema | Inspeções Simuladas (laboratório SEMA/MT, fictício) |
-| Estado desta especificação | 2026-10-23, rodadas M0 parcial, S0 a S3, R1, R2 e R3 entregues |
+| Estado desta especificação | 2026-10-23, rodadas M0 parcial, S0 a S3, R1, R2, R3 e R4 entregues |
 | Repositório | https://github.com/tiagobatista-stack/unidade_8_desafio_21 (branch `main`) |
 | Frontend publicado | https://unidade-8-desafio-21.vercel.app (só funciona com o backend local do mesmo computador) |
-| Verificação de referência | backend **348**, frontend **125**, E2E **14** passos, build ok |
+| Verificação de referência | backend **457**, frontend **159**, E2E **16** passos, build ok |
 | Fonte do texto completo das regras | `HANDOFF_CLAUDE_CODE.md` (RN01–RN47, CA01–CA116, P1–P17, PB1–PB3) |
 
 ## 0. Como usar este documento (laço SDD)
@@ -206,32 +206,41 @@ Texto normativo de cada critério: seção 11 do HANDOFF. A numeração é **est
 | CA74–CA85 | R1: processo, editar, cartões, novo local, migração, CSV | `test_numero_processo`, `test_migracao`, `novas-funcoes.test.tsx` |
 | CA86–CA110 | R2: usabilidade, CAR e proprietários, cópia, numeração, relatório | `test_orientacoes`, `test_locais_empreendimento`, `test_copia_fechamento`, `test_relatorio`, `locais.test.tsx`, `correcoes-a.test.tsx`, `relatorio.test.tsx` |
 | CA111–CA116 | R3: exportação dos itens | `test_exportacao_itens`, `paginas.test.tsx` |
+| CA117–CA139 | R4: capa da SEMA, equipe, atos, CPF/CNPJ, endereços, GMS, dados para copiar, corpo do relatório | `test_r4_inspecao`, `test_r4_locais`, `test_r4_coordenadas`, `test_r4_dados_capa`, `test_validacao_pt`, `test_documento`, `test_coordenadas_gms`, `test_migracao_r4`, `test_relatorio`, `r4-s2.test.tsx`, `r4-s3.test.tsx`, `relatorio.test.tsx` |
 
 ## 12. Estratégia de verificação
 
 ```
-cd backend  && pytest -q                    # 348 testes
-cd frontend && npm test -- --run            # 125 testes
+cd backend  && pytest -q                    # 457 testes
+cd frontend && npm test -- --run            # 159 testes
 cd frontend && npm run build                # tsc + vite
-cd e2e      && npx playwright test          # 14 passos; regrava telas, PDFs do relatório e CSVs de exemplo
+cd e2e      && npx playwright test          # 16 passos; regrava telas, PDFs do relatório e CSVs de exemplo
 ```
 
 | Backend (por arquivo) | Testes | Frontend (por arquivo) | Testes |
 |---|---|---|---|
 | api/test_api_fotos | 36 | tests/paginas | 24 |
 | api/test_api_inspecoes | 36 | tests/fotos | 14 |
+| api/test_r4_coordenadas | 8 | tests/r4-s2 | 19 |
+| api/test_r4_dados_capa | 12 | tests/r4-s3 | 12 |
+| api/test_r4_inspecao | 26 | | |
+| api/test_r4_locais | 11 | | |
+| api/test_validacao_pt | 10 | | |
 | api/test_api_painel | 14 | tests/novas-funcoes | 22 |
 | api/test_banco_novo | 3 | tests/correcoes-a | 19 |
 | api/test_copia_fechamento | 9 | tests/locais | 16 |
-| api/test_cors | 2 | tests/relatorio | 30 |
-| api/test_exportacao_itens | 14 | **Total** | **125** |
+| api/test_cors | 2 | tests/relatorio | 33 |
+| api/test_exportacao_itens | 14 | **Total** | **159** |
 | api/test_health | 2 | | |
 | api/test_locais_empreendimento | 16 | | |
 | api/test_numero_processo | 25 | | |
 | api/test_orientacoes | 11 | | |
-| api/test_relatorio | 21 | | |
+| api/test_relatorio | 25 | | |
 | service/test_inspecao_service | 38 | | |
 | unit/test_clock | 3 | | |
+| unit/test_coordenadas_gms | 18 | | |
+| unit/test_documento | 18 | | |
+| unit/test_migracao_r4 | 2 | | |
 | unit/test_contato | 25 | | |
 | unit/test_dominio | 24 | | |
 | unit/test_dominio_relatorio | 8 | | |
@@ -241,7 +250,7 @@ cd e2e      && npx playwright test          # 14 passos; regrava telas, PDFs do 
 | unit/test_migracao | 5 | | |
 | unit/test_persistencia | 18 | | |
 | unit/test_persistencia_fotos | 10 | | |
-| **Total** | **348** | | |
+| **Total** | **457** | | |
 
 **E2E (Playwright, Chromium, API e Vite próprios, banco temporário, data fixa 2026-10-23):** painel vazio e exemplos 5/2/3; lista e filtros; contadores clicáveis; editar e busca por processo; Locais com CAR e proprietários; nova inspeção e cancelamento; aviso de agendamento futuro; fechamento bloqueado; fotos e falha parcial; fechar (1 pendência, 4 finalizadas); cópia no fechamento; relatório e PDF; inspeção reprovada em tela estreita; CSV (inclusive itens) e verificação de fotos.
 
@@ -267,7 +276,7 @@ cd e2e      && npx playwright test          # 14 passos; regrava telas, PDFs do 
 
 ## 14. Estado atual e backlog
 
-**Entregue:** S0 estrutura; S1A e S1B API; S2A e S2B frontend; S3 painel, exemplos e CSV; R1 melhorias pós-uso; R2 usabilidade, empreendimento, cópia e relatório; R3 exportação dos itens. Frontend publicado.
+**Entregue:** S0 estrutura; S1A e S1B API; S2A e S2B frontend; S3 painel, exemplos e CSV; R1 melhorias pós-uso; R2 usabilidade, empreendimento, cópia e relatório; R3 exportação dos itens; R4 dados para a capa da SEMA e corpo do relatório (PR de revisão). Frontend publicado.
 
 **Pendências abertas**
 
@@ -349,7 +358,7 @@ npm install && npm run dev                      # http://localhost:5173
 **Checklist de encerramento (estado em 2026-10-23)**
 
 - [x] `main` publicado no GitHub, `git status` limpo
-- [x] backend 348, frontend 125, E2E 14 verdes; build ok
+- [x] backend 457, frontend 159, E2E 16 verdes; build ok (R4 em PR de revisão; o merge é do dono do produto)
 - [x] README, HANDOFF, PLANO, CLAUDE.md e evidências atualizados
 - [x] deploy da Vercel `READY` a cada push
 - [ ] decisões do dono do produto: licença (P10); rever `respondido_em` (PB2) quando quiser
@@ -359,7 +368,7 @@ npm install && npm run dev                      # http://localhost:5173
 
 ```
 Leia docs/SPEC_SDD.md, HANDOFF_CLAUDE_CODE.md (RN, CA, P, PB) e CLAUDE.md.
-Estado: MVP completo com rodadas R1, R2 e R3; backend 348, frontend 125, E2E 14 verdes.
+Estado: MVP completo com rodadas R1 a R4 (R4 em PR de revisão); backend 457, frontend 159, E2E 16 verdes.
 Regras: siga o laço SDD (especificar -> critério -> teste -> código -> docs), não relaxe testes,
 use dados só fictícios, use git add explícito, commits em português por assunto, push sem --force.
 Antes de mexer, rode as quatro verificações da seção 12 e confirme os números.
