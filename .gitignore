@@ -14,4 +14,5 @@ playwright-report/
 
 .vercel
 .env*
-backend/data_backup*/
+# cópias locais do banco e das fotos (backup, testes): qualquer pasta backend/data_*/
+backend/data_*/

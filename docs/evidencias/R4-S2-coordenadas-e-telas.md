@@ -39,3 +39,7 @@ Testes novos do front: `tests/r4-s2.test.tsx` (19).
 - A lista de assuntos e de tipos de ato está duplicada no front (`src/constantes.ts`) só para montar os seletores; a API valida os valores. Se a lista mudar, atualizar os dois lados.
 - Não houve conferência visual do layout dos formulários novos nesta sprint (as capturas de tela entram na S4); vale olhar Locais e Nova inspeção no navegador, inclusive em tela estreita.
 - A exibição dos dados da capa (página "Dados para a capa e lavratura") é a S3.
+
+## Ajustes pós-teste da S2
+- **Validação em português** (`app/errors.py`): o tratador de `RequestValidationError` traduz as mensagens do Pydantic e usa o rótulo do campo, por exemplo `Objetivo: obrigatória`, `Local: deve ser um número`, `Nome (linha 2): obrigatória`, `Tamanho: deve ser menor ou igual a 100`. O `campo` continua com o nome técnico (`equipe.1.nome`). Tipos sem tradução específica caem em "valor inválido". Testes: `tests/api/test_validacao_pt.py` (10; falham se qualquer mensagem sair em inglês). Backend: 431 → **441**.
+- **`.gitignore`**: `backend/data_backup*/` virou `backend/data_*/`, cobrindo cópias locais do banco e das fotos (backup, testes). Conferido com `git check-ignore` e `git ls-files`: nada de `backend/data_*` está versionado.
