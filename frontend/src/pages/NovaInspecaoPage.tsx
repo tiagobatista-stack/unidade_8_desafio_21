@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/api";
 import { paraErro } from "../api/cliente";
 import { Carregando, MensagemErro } from "../components/Basicos";
+import { BlocosCapa, capaVazia, corpoCapa } from "../components/BlocosCapa";
 import { ModalNovoLocal } from "../components/ModalNovoLocal";
 import { useInvalidarTudo, useLocais } from "../hooks/useDados";
 
@@ -16,6 +17,7 @@ export default function NovaInspecaoPage() {
   const [agendamento, setAgendamento] = useState("");
   const [objetivo, setObjetivo] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [capa, setCapa] = useState(capaVazia());
   const [tentou, setTentou] = useState(false);
   const [erro, setErro] = useState<unknown>(null);
   const [enviando, setEnviando] = useState(false);
@@ -37,6 +39,7 @@ export default function NovaInspecaoPage() {
         data_agendamento: agendamento,
         objetivo,
         observacoes: observacoes || undefined,
+        ...corpoCapa(capa),
       });
       invalidar();
       navegar(`/inspecoes/${nova.id}`);
@@ -98,6 +101,7 @@ export default function NovaInspecaoPage() {
           Observações
           <textarea id="nova-observacoes" name="nova-observacoes" aria-label="Observações" rows={3} value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
         </label>
+        <BlocosCapa prefixo="nova" v={capa} mudar={(p) => setCapa((c) => ({ ...c, ...p }))} />
         <MensagemErro erro={erro} />
         <div className="acoes">
           <button type="submit" disabled={enviando}>Cadastrar inspeção</button>

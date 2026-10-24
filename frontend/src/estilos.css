@@ -89,7 +89,11 @@ a.indicador:hover, a.indicador:focus-visible { border-color: var(--primaria); bo
 .dados-simples { border: 0; padding: 0; background: none; }
 .dados .largo { grid-column: 1 / -1; }
 .lista-simples { margin: 0; padding-left: 18px; }
-@media (max-width: 600px) { .linha-proprietario { grid-template-columns: 1fr; } }
+.linha-proprietario:has(> fieldset) { grid-template-columns: 1fr 1fr 1fr; } /* responsável com endereço de correspondência */
+.linha-proprietario:has(> fieldset) > fieldset { grid-column: 1 / -1; }
+.linha-proprietario:has(> fieldset) > button { grid-column: 1 / -1; justify-self: start; }
+.linha-membro { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+@media (max-width: 600px) { .linha-proprietario, .linha-proprietario:has(> fieldset), .linha-membro { grid-template-columns: 1fr; } }
 
 /* ---------- Relatório de vistoria (tela) ---------- */
 .relatorio-pagina { max-width: 210mm; margin: 0 auto; }

@@ -89,9 +89,10 @@ export function foto(id: number, parcial: Partial<Foto> = {}): Foto {
 }
 
 /** Espelha o que a API devolve em `campos_editaveis` por status. */
+const CAPA = ["assunto_outro", "assunto_tipo", "atos", "equipe", "interessado_comarca", "interessado_orgao", "interessado_requerente", "interessado_unidade", "numero_relatorio_sema", "providencias_texto"];
 const EDITAVEIS: Record<string, string[]> = {
-  ABERTA: ["data_agendamento", "local_id", "numero_processo", "objetivo", "observacoes", "observacoes_vistoria"],
-  EM_ANDAMENTO: ["data_realizacao", "numero_processo", "observacoes", "observacoes_vistoria"],
+  ABERTA: ["data_agendamento", "local_id", "numero_processo", "objetivo", "observacoes", "observacoes_vistoria", ...CAPA],
+  EM_ANDAMENTO: ["data_realizacao", "numero_processo", "observacoes", "observacoes_vistoria", ...CAPA],
   FINALIZADA: [],
   CANCELADA: [],
 };

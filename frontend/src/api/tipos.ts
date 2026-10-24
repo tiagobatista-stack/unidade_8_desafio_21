@@ -14,12 +14,33 @@ export interface Pagina<T> {
 }
 
 export interface Proprietario {
-  nome: string;
+  nome: string; // nome / razão social
   telefone: string | null; // só dígitos
   telefone_formatado: string | null;
+  cpf_cnpj?: string | null; // só dígitos
+  cpf_cnpj_formatado?: string | null;
+  corr_logradouro?: string | null;
+  corr_numero?: string | null;
+  corr_complemento?: string | null;
+  corr_bairro?: string | null;
+  corr_municipio?: string | null;
+  corr_uf?: string | null;
+  corr_cep?: string | null; // só dígitos
+  corr_cep_formatado?: string | null;
 }
 
-export interface Local {
+/** Endereço do empreendimento e coordenadas em GMS, como a API devolve (R4). */
+export interface EnderecoCoordenadas {
+  logradouro?: string | null;
+  uf?: string | null;
+  cep?: string | null; // só dígitos
+  cep_formatado?: string | null;
+  latitude_gms?: string;
+  longitude_gms?: string;
+  coordenadas_gms?: string; // LAT 11° 46' 34" S | LONG 59° 05' 12" W
+}
+
+export interface Local extends EnderecoCoordenadas {
   id: number;
   nome: string;
   municipio: string;
@@ -32,7 +53,7 @@ export interface Local {
 }
 
 /** Dados do empreendimento na inspeção (cópia do fechamento quando finalizada). */
-export interface Empreendimento {
+export interface Empreendimento extends EnderecoCoordenadas {
   nome: string;
   municipio: string;
   tipo: string;
@@ -82,7 +103,7 @@ export interface Foto {
   url_original: string;
 }
 
-export interface InspecaoDetalhe {
+export interface InspecaoDetalhe extends DadosCapa {
   id: number;
   codigo: string;
   numero_processo: string | null;
@@ -113,14 +134,59 @@ export interface Indicadores {
   gerado_em: string;
 }
 
-export interface NovoLocal {
+export interface NovoProprietario {
   nome: string;
+  telefone: string | null;
+  cpf_cnpj?: string;
+  corr_logradouro?: string;
+  corr_numero?: string;
+  corr_complemento?: string;
+  corr_bairro?: string;
+  corr_municipio?: string;
+  corr_uf?: string;
+  corr_cep?: string;
+  correspondencia_mesmo_endereco?: boolean; // a API copia logradouro, município, UF e CEP do empreendimento
+}
+
+export interface NovoLocal {
+  nome: string; // nome fantasia / denominação
   municipio: string;
   tipo: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number; // decimal, ou latitude_gms (a API converte)
+  longitude?: number;
+  latitude_gms?: string;
+  longitude_gms?: string;
   numero_car?: string | null;
-  proprietarios?: { nome: string; telefone: string | null }[];
+  logradouro?: string;
+  uf?: string;
+  cep?: string;
+  proprietarios?: NovoProprietario[];
+}
+
+export interface MembroEquipe {
+  nome: string;
+  cargo: string | null;
+  orgao: string | null;
+}
+
+export interface AtoLavrado {
+  id: number;
+  tipo: string;
+  numero: string | null;
+}
+
+/** Dados da capa da SEMA que a inspeção guarda (R4). */
+export interface DadosCapa {
+  interessado_orgao?: string | null;
+  interessado_unidade?: string | null;
+  interessado_comarca?: string | null;
+  interessado_requerente?: string | null;
+  assunto_tipo?: string | null;
+  assunto_outro?: string | null;
+  providencias_texto?: string | null;
+  numero_relatorio_sema?: string | null;
+  equipe?: MembroEquipe[];
+  atos?: AtoLavrado[];
 }
 
 export interface FiltrosLista {
