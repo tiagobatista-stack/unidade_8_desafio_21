@@ -4,14 +4,7 @@ import { urlApi } from "../api/cliente";
 import type { FotoRelatorio, Relatorio } from "../api/tipos";
 import { Carregando, MensagemErro, TextoPuro } from "../components/Basicos";
 import { useRelatorio } from "../hooks/useDados";
-import {
-  ROTULO_SITUACAO,
-  VAZIO,
-  formatarData,
-  formatarDataHora,
-  rotuloResultado,
-  rotuloStatus,
-} from "../utils/formatar";
+import { ROTULO_SITUACAO, VAZIO, formatarData, formatarDataHora, rotuloResultado } from "../utils/formatar";
 
 const NAO_INFORMADO = "Não informado";
 
@@ -57,22 +50,42 @@ function Foto({ foto, aoCarregar }: { foto: FotoRelatorio; aoCarregar: () => voi
   );
 }
 
-function Documento({ r, inspecaoId }: { r: Relatorio; inspecaoId: number }) {
+interface PropsDocumento {
+  r: Relatorio;
+  inspecaoId: number;
+  incluirConclusao: boolean;
+  aoAlternarConclusao: (v: boolean) => void;
+}
+
+function Documento({ r, inspecaoId, incluirConclusao, aoAlternarConclusao }: PropsDocumento) {
   const [carregadas, setCarregadas] = useState(0);
-  const total = r.fotos.length;
+  const { cabecalho, constatacoes, providencias } = r;
+  const total = constatacoes.fotos.length;
   const prontas = carregadas >= total; // só libera a impressão com todas as imagens já carregadas
-  const id = r.identificacao;
-  const emp = r.empreendimento;
-  const t = r.checklist.totais;
-  const rodape = `${r.numero_relatorio ? `Relatório nº ${r.numero_relatorio}` : "Relatório sem número (prévia)"} · ${id.codigo} · Sistema fictício/simulado`;
+  const t = constatacoes.checklist.totais;
+  const refInterna = cabecalho.ref_interna ? `Ref. interna ${cabecalho.ref_interna}` : "Ref. interna: sem número (prévia)";
+  const rodape = `${refInterna} · ${cabecalho.codigo} · Sistema fictício/simulado`;
 
   return (
     <div className="relatorio-pagina">
       <div className="barra-relatorio nao-imprimir">
         <Link to={`/inspecoes/${inspecaoId}`}>← Voltar à inspeção</Link>
         <button type="button" disabled={!prontas} onClick={() => window.print()}>Imprimir / Salvar PDF</button>
+        <label htmlFor="relatorio-incluir-conclusao">
+          <input
+            type="checkbox"
+            id="relatorio-incluir-conclusao"
+            name="relatorio-incluir-conclusao"
+            checked={incluirConclusao}
+            onChange={(e) => aoAlternarConclusao(e.target.checked)}
+          />{" "}
+          Incluir conclusão
+        </label>
         {!prontas && <span role="status" className="dica">Carregando imagens… {carregadas}/{total}</span>}
-        <span className="dica">Dica: na janela de impressão escolha "Salvar como PDF", papel A4.</span>
+        <span className="dica">
+          Corpo do relatório, a partir do item 5, para anexar depois da capa gerada no sistema da SEMA. Na janela de impressão
+          escolha "Salvar como PDF", papel A4.
+        </span>
       </div>
 
       <style data-testid="regra-pagina">{regraDePagina(rodape, r.marca_dagua)}</style>
@@ -80,95 +93,56 @@ function Documento({ r, inspecaoId }: { r: Relatorio; inspecaoId: number }) {
         {r.marca_dagua && <div className="marca-dagua" data-testid="marca-dagua" aria-hidden="true">{r.marca_dagua}</div>}
         {r.previa && (
           <div role="note" className="faixa-previa" data-testid="faixa-previa">
-            {r.marca_dagua}: este documento ainda não tem número e pode mudar até a inspeção ser finalizada.
+            {r.marca_dagua}: este documento ainda não tem Ref. interna e pode mudar até a inspeção ser finalizada.
           </div>
         )}
 
         <header className="cabecalho-relatorio">
-          <h1 data-testid="titulo-relatorio">{r.titulo}</h1>
-          <p className="dica">Inspeções Simuladas — sistema fictício, dados de demonstração.</p>
+          <h1 className="cabecalho-minimo" data-testid="cabecalho-relatorio">{cabecalho.linha}</h1>
         </header>
 
-        <section aria-labelledby="rel-1">
-          <h2 id="rel-1">1. Identificação</h2>
-          <dl className="dados-relatorio">
-            <div><dt>Relatório nº</dt><dd data-testid="rel-numero">{r.numero_relatorio ?? "— (prévia)"}</dd></div>
-            <div><dt>Inspeção</dt><dd>{id.codigo}</dd></div>
-            <div><dt>Nº do processo</dt><dd>{id.numero_processo ?? NAO_INFORMADO}</dd></div>
-            <div><dt>Status</dt><dd>{rotuloStatus(id.status)}</dd></div>
-            <div><dt>Resultado</dt><dd>{rotuloResultado(id.resultado)}</dd></div>
-            <div><dt>Data de agendamento</dt><dd>{formatarData(id.data_agendamento)}</dd></div>
-            <div><dt>Data da vistoria (realização)</dt><dd>{formatarData(id.data_realizacao)}</dd></div>
-            <div><dt>Conclusão (data e hora)</dt><dd data-testid="rel-fechado-em">{formatarDataHora(id.fechado_em)}</dd></div>
-          </dl>
-        </section>
+        <section aria-labelledby="rel-5">
+          <h2 id="rel-5">5 – Constatações</h2>
 
-        <section aria-labelledby="rel-2">
-          <h2 id="rel-2">2. Empreendimento</h2>
+          <h3>5.1 Relato da vistoria</h3>
           <dl className="dados-relatorio">
-            <div><dt>Nome</dt><dd>{emp.nome}</dd></div>
-            <div><dt>Município</dt><dd>{emp.municipio}</dd></div>
-            <div><dt>Tipo</dt><dd>{emp.tipo}</dd></div>
-            <div><dt>Coordenadas</dt><dd>{emp.latitude}, {emp.longitude}</dd></div>
-            <div><dt>Nº do CAR</dt><dd data-testid="rel-car">{emp.numero_car ?? NAO_INFORMADO}</dd></div>
             <div className="largo">
-              <dt>Proprietários</dt>
-              <dd data-testid="rel-proprietarios">
-                {emp.proprietarios.length === 0 ? (
-                  NAO_INFORMADO
-                ) : (
-                  <ul className="lista-simples">
-                    {emp.proprietarios.map((p, i) => (
-                      <li key={i}>{p.nome}{p.telefone_formatado ? ` — ${p.telefone_formatado}` : ""}</li>
-                    ))}
-                  </ul>
-                )}
-              </dd>
+              <dt>Data da vistoria</dt>
+              <dd data-testid="rel-data-vistoria">{formatarData(constatacoes.relato.data_realizacao)}</dd>
             </div>
           </dl>
-        </section>
+          <TextoPuro valor={constatacoes.relato.observacoes_vistoria} />
 
-        <section aria-labelledby="rel-3">
-          <h2 id="rel-3">3. Objetivo e observações</h2>
-          <h3>Objetivo</h3>
-          <TextoPuro valor={r.objetivo.objetivo} />
-          <h3>Observações gerais</h3>
-          <TextoPuro valor={r.objetivo.observacoes} />
-          <h3>Observações da vistoria</h3>
-          <TextoPuro valor={r.objetivo.observacoes_vistoria} />
-        </section>
+          <div className="bloco-checklist">
+            <h3>5.2 Checklist</h3>
+            <table className="tabela-relatorio">
+              <thead>
+                <tr><th>Nº</th><th>Item</th><th>Crítico</th><th>Situação</th><th>Observação</th></tr>
+              </thead>
+              <tbody>
+                {constatacoes.checklist.itens.map((i) => (
+                  <tr key={i.numero} className={i.critico_nao_conforme ? "linha-critica" : undefined} data-testid="linha-checklist">
+                    <td>{i.numero}</td>
+                    <td>{i.descricao}</td>
+                    <td>{i.critico ? "Sim" : "Não"}</td>
+                    <td>
+                      {ROTULO_SITUACAO[i.situacao]}
+                      {i.critico_nao_conforme && <strong className="selo-critico-nc"> · CRÍTICO NÃO CONFORME</strong>}
+                    </td>
+                    <td className="texto-puro">{i.observacao ?? VAZIO}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="totais-relatorio" data-testid="totais-checklist">
+              Totais: {t.respondidos} de {t.total} respondidos · {t.conformes} conformes · {t.nao_conformes} não conformes ·{" "}
+              {t.nao_aplicaveis} não aplicáveis{t.nao_respondidos > 0 ? ` · ${t.nao_respondidos} não respondidos` : ""}
+            </p>
+          </div>
 
-        <section aria-labelledby="rel-4" className="bloco-checklist">
-          <h2 id="rel-4">4. Checklist</h2>
-          <table className="tabela-relatorio">
-            <thead>
-              <tr><th>Nº</th><th>Item</th><th>Crítico</th><th>Situação</th><th>Observação</th></tr>
-            </thead>
-            <tbody>
-              {r.checklist.itens.map((i) => (
-                <tr key={i.numero} className={i.critico_nao_conforme ? "linha-critica" : undefined} data-testid="linha-checklist">
-                  <td>{i.numero}</td>
-                  <td>{i.descricao}</td>
-                  <td>{i.critico ? "Sim" : "Não"}</td>
-                  <td>
-                    {ROTULO_SITUACAO[i.situacao]}
-                    {i.critico_nao_conforme && <strong className="selo-critico-nc"> · CRÍTICO NÃO CONFORME</strong>}
-                  </td>
-                  <td className="texto-puro">{i.observacao ?? VAZIO}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="totais-relatorio" data-testid="totais-checklist">
-            Totais: {t.respondidos} de {t.total} respondidos · {t.conformes} conformes · {t.nao_conformes} não conformes ·{" "}
-            {t.nao_aplicaveis} não aplicáveis{t.nao_respondidos > 0 ? ` · ${t.nao_respondidos} não respondidos` : ""}
-          </p>
-        </section>
-
-        <section aria-labelledby="rel-5">
-          <h2 id="rel-5">5. Registro fotográfico</h2>
+          <h3>5.3 Registro fotográfico</h3>
           {total === 0 && <p>Nenhuma foto anexada.</p>}
-          {emPares(r.fotos).map((par, i) => (
+          {emPares(constatacoes.fotos).map((par, i) => (
             <div className="par-fotos" key={i}>
               {par.map((f) => (
                 <Foto key={f.numero} foto={f} aoCarregar={() => setCarregadas((n) => n + 1)} />
@@ -178,12 +152,28 @@ function Documento({ r, inspecaoId }: { r: Relatorio; inspecaoId: number }) {
         </section>
 
         <section aria-labelledby="rel-6">
-          <h2 id="rel-6">6. Conclusão</h2>
-          <p data-testid="conclusao-resultado">
-            Resultado: <strong>{r.conclusao.resultado ? rotuloResultado(r.conclusao.resultado) : "Ainda não calculado (prévia)"}</strong>
-          </p>
-          <p data-testid="conclusao-regra">Regra aplicada: {r.conclusao.regra}</p>
+          <h2 id="rel-6">6 – Providências tomadas</h2>
+          {providencias.texto ? (
+            <TextoPuro valor={providencias.texto} />
+          ) : (
+            <p data-testid="sem-providencias-texto">Nenhuma providência registrada em texto.</p>
+          )}
+          {providencias.atos.length > 0 && (
+            <ul className="lista-simples" data-testid="atos-relatorio">
+              {providencias.atos.map((a, i) => <li key={i}>{a.rotulo}</li>)}
+            </ul>
+          )}
         </section>
+
+        {r.conclusao && (
+          <section aria-labelledby="rel-7">
+            <h2 id="rel-7">7 – Conclusão</h2>
+            <p data-testid="conclusao-resultado">
+              Resultado: <strong>{r.conclusao.resultado ? rotuloResultado(r.conclusao.resultado) : "Ainda não calculado (prévia)"}</strong>
+            </p>
+            <p data-testid="conclusao-regra">Regra aplicada: {r.conclusao.regra}</p>
+          </section>
+        )}
 
         <footer className="rodape-relatorio" data-testid="rodape-relatorio">{rodape}</footer>
       </article>
@@ -193,9 +183,10 @@ function Documento({ r, inspecaoId }: { r: Relatorio; inspecaoId: number }) {
 
 export default function RelatorioPage() {
   const id = Number(useParams().id);
-  const { data, isLoading, error } = useRelatorio(id);
+  const [incluirConclusao, setIncluirConclusao] = useState(true); // ligada por padrão
+  const { data, isLoading, error } = useRelatorio(id, incluirConclusao);
   if (isLoading) return <Carregando texto="Montando o relatório…" />;
   if (error) return <MensagemErro erro={error} />;
   if (!data) return null;
-  return <Documento r={data} inspecaoId={id} />;
+  return <Documento r={data} inspecaoId={id} incluirConclusao={incluirConclusao} aoAlternarConclusao={setIncluirConclusao} />;
 }

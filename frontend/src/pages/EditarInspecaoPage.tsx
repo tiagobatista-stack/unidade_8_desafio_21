@@ -4,6 +4,7 @@ import { api } from "../api/api";
 import { paraErro } from "../api/cliente";
 import type { InspecaoDetalhe } from "../api/tipos";
 import { Carregando, MensagemErro } from "../components/Basicos";
+import { BlocosCapa, alteracoesCapa, capaDe, type CampoCapa, type ValoresCapa } from "../components/BlocosCapa";
 import { useInspecao, useInvalidarTudo, useLocais } from "../hooks/useDados";
 import { VAZIO, formatarData, rotuloStatus } from "../utils/formatar";
 
@@ -34,20 +35,25 @@ export default function EditarInspecaoPage() {
   const { data: insp, isLoading, error } = useInspecao(id);
   const locais = useLocais();
   const [v, setV] = useState<Valores | null>(null);
+  const [capa, setCapa] = useState<ValoresCapa | null>(null);
   const [erro, setErro] = useState<unknown>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
-    if (insp) setV(deInspecao(insp));
+    if (insp) {
+      setV(deInspecao(insp));
+      setCapa(capaDe(insp));
+    }
   }, [insp]);
 
   if (isLoading) return <Carregando />;
   if (error) return <MensagemErro erro={error} />;
-  if (!insp || !v) return null;
+  if (!insp || !v || !capa) return null;
 
   // Quem decide o que é editável é a API (campos_editaveis); aqui só se renderiza.
-  const pode = (campo: keyof Valores) => insp.campos_editaveis.includes(campo);
+  const pode = (campo: string) => insp.campos_editaveis.includes(campo);
+  const posFechamento = insp.status === "FINALIZADA";
   const mudar = (campo: keyof Valores, valor: string) => setV({ ...v, [campo]: valor });
   const original = deInspecao(insp);
 
@@ -56,11 +62,12 @@ export default function EditarInspecaoPage() {
     setErro(null);
     setAviso(null);
     const alterados = (Object.keys(v!) as (keyof Valores)[]).filter((c) => pode(c) && v![c] !== original[c]);
-    if (alterados.length === 0) {
+    const alteracoes = alteracoesCapa(capa!, capaDe(insp!), pode as (c: CampoCapa) => boolean, posFechamento);
+    if (alterados.length === 0 && Object.keys(alteracoes).length === 0) {
       setAviso("Nenhuma alteração para salvar.");
       return;
     }
-    const corpo: Record<string, unknown> = {};
+    const corpo: Record<string, unknown> = { ...alteracoes };
     for (const c of alterados) {
       if (c === "local_id") corpo[c] = Number(v![c]);
       else if (c === "data_agendamento" || c === "data_realizacao") corpo[c] = v![c] || null;
@@ -128,6 +135,7 @@ export default function EditarInspecaoPage() {
         {campo("Observações da vistoria", "observacoes_vistoria",
           <textarea id="editar-observacoes_vistoria" name="editar-observacoes_vistoria" aria-label="Observações da vistoria" rows={4} value={v.observacoes_vistoria} onChange={(e) => mudar("observacoes_vistoria", e.target.value)} />,
           original.observacoes_vistoria)}
+        <BlocosCapa prefixo="editar" v={capa} mudar={(p) => setCapa((c) => ({ ...c!, ...p }))} pode={pode as (c: CampoCapa) => boolean} posFechamento={posFechamento} comNumeroSema />
         {aviso && <div role="status" className="alerta alerta-aviso">{aviso}</div>}
         <MensagemErro erro={erro} />
         <div className="acoes">

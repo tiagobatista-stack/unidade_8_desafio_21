@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.schemas.capa import DadosCapaOut
 from app.schemas.relatorio import RelatorioOut
-from app.services import relatorio_service
+from app.services import capa_service, relatorio_service
 from app.schemas.inspecao import (
     CancelarIn,
     InspecaoDetalhe,
@@ -61,5 +62,10 @@ def fechar(inspecao_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{inspecao_id}/relatorio", response_model=RelatorioOut)
-def relatorio(inspecao_id: int, db: Session = Depends(get_db)):
-    return relatorio_service.montar(service.obter(db, inspecao_id))
+def relatorio(inspecao_id: int, incluir_conclusao: bool = True, db: Session = Depends(get_db)):
+    return relatorio_service.montar(service.obter(db, inspecao_id), incluir_conclusao)
+
+
+@router.get("/{inspecao_id}/dados-capa", response_model=DadosCapaOut)
+def dados_capa(inspecao_id: int, db: Session = Depends(get_db)):
+    return capa_service.montar(service.obter(db, inspecao_id))

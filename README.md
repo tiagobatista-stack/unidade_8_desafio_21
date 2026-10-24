@@ -4,7 +4,7 @@ Ferramenta **local, para um único usuário**, que simula o fluxo de inspeções
 
 > **Aviso: todos os dados são fictícios.** Nenhum dado real da SEMA/MT é usado. As imagens de exemplo são geradas por programa.
 
-> **Status:** MVP implementado e testado (backend, frontend e E2E). Frontend publicado na Vercel; o backend roda localmente. Evidências, telas e PDFs do relatório em [`docs/evidencias/`](docs/evidencias/). Resumo da última rodada em [O que mudou na rodada R2](#o-que-mudou-na-rodada-r2). Pendências e limitações no fim deste arquivo.
+> **Status:** MVP implementado e testado (backend, frontend e E2E). Frontend publicado na Vercel; o backend roda localmente. Evidências, telas e PDFs do relatório em [`docs/evidencias/`](docs/evidencias/). Resumo da última rodada em [O que mudou na rodada R4](#o-que-mudou-na-rodada-r4). Pendências e limitações no fim deste arquivo.
 
 **Site publicado (frontend):** https://unidade-8-desafio-21.vercel.app. Ele só mostra dados quando o backend está rodando no mesmo computador do navegador (veja [Frontend na Vercel](#frontend-na-vercel-com-backend-local)).
 
@@ -17,7 +17,8 @@ Ferramenta **local, para um único usuário**, que simula o fluxo de inspeções
 - Registro da situação de cada item (Conforme, Não conforme, Não se aplica), com item avulso opcional. Item não conforme exige observação para fechar.
 - Observações da vistoria (até 2000 caracteres) e fotos (JPEG, PNG ou WebP, até 5 MB, no máximo 20 por inspeção), cada uma com **anotação obrigatória**. O tipo é validado pelo conteúdo, o EXIF/GPS é removido e é gerada miniatura de 320 px.
 - Fechamento com resultado calculado: **Reprovada** se algum item crítico for não conforme, **Aprovada com ressalvas** se houver outro item não conforme, **Aprovada** nos demais casos. Fechamento bloqueado lista cada item pendente. Ao fechar, o sistema grava uma **cópia dos dados do empreendimento**, então editar o local depois não muda a inspeção finalizada.
-- **Relatório de vistoria** numerado (`Relatório de Vistoria nº 0001/2026`) e imprimível, com botão "Imprimir / Salvar PDF" (veja [Relatório de vistoria](#relatório-de-vistoria)). Inspeção não finalizada gera uma **prévia** sem número, marcada "PRÉVIA, NÃO FINALIZADO".
+- **Dados para a capa e lavratura** (R4): os dados do interessado, assunto, empreendimento, responsáveis, equipe e atos, na ordem da capa do sistema da SEMA, com botões **Copiar** por campo, por bloco e **Copiar tudo**. Este sistema **não gera a capa**.
+- **Corpo do relatório** (R4), a partir do item 5 (constatações, providências e conclusão), para anexar depois da capa, imprimível com "Imprimir / Salvar PDF" (veja [Relatório de vistoria](#relatório-de-vistoria)). Inspeção não finalizada gera uma **prévia** sem Ref. interna, marcada "PRÉVIA, NÃO FINALIZADO".
 - Cancelamento com motivo (somente inspeções Abertas). Inspeções finalizadas ou canceladas ficam somente leitura.
 - Painel com três indicadores (**Inspeções**, **Pendências**, **Finalizadas**) **clicáveis**: cada um abre a lista da categoria (Inspeções exclui as canceladas). A lista tem filtros de status e período, **busca por número do processo** e mostra o filtro ativo.
 - Carga de dados de exemplo (4 locais com CAR e proprietários fictícios, 5 inspeções com números de processo fictícios e 9 fotos).
@@ -80,7 +81,7 @@ npm run dev
 
 **3. Usar:** abra http://localhost:5173. Num banco novo não há locais: crie um em **Nova inspeção → + Novo local** ou clique em **Carregar exemplos** no Painel para criar 4 locais, 5 inspeções e 9 fotos fictícias (o Painel passa a mostrar 5 / 2 / 3). A carga só é aceita em banco sem dados.
 
-Fluxo típico: **Locais** (cadastre o empreendimento, com CAR e proprietários) → **Nova inspeção** (informe o número do processo) → abrir a inspeção → responder o checklist (a inspeção passa a Em andamento) → registrar observações e fotos com anotação → **Fechar inspeção** (o resultado é calculado e o relatório recebe número) ou **Cancelar** (somente Aberta) → **Gerar relatório**. No Painel, **Exportar CSV** baixa uma linha por inspeção e **Exportar itens (CSV)** baixa uma linha por item do checklist.
+Fluxo típico: **Locais** (cadastre o empreendimento, com CAR e proprietários) → **Nova inspeção** (informe o número do processo) → abrir a inspeção → responder o checklist (a inspeção passa a Em andamento) → registrar observações e fotos com anotação → **Fechar inspeção** (exige ao menos 1 membro na equipe; o resultado é calculado e o relatório recebe a Ref. interna) ou **Cancelar** (somente Aberta) → **Dados para capa e lavratura** (copiar para o sistema da SEMA) → **Registrar números da SEMA** (número dos atos e do relatório, depois de lavrados lá) → **Gerar relatório**. No Painel, **Exportar CSV** baixa uma linha por inspeção e **Exportar itens (CSV)** baixa uma linha por item do checklist.
 
 Para usar o frontend publicado na Vercel com o seu backend local, veja [Frontend na Vercel](#frontend-na-vercel-com-backend-local).
 
@@ -98,15 +99,15 @@ Para usar o frontend publicado na Vercel com o seu backend local, veja [Frontend
 ## Testes
 
 ```
-pytest -q                     # em backend/  (348 testes)
-npm test -- --run             # em frontend/ (125 testes)
+pytest -q                     # em backend/  (457 testes)
+npm test -- --run             # em frontend/ (159 testes)
 npm run build                 # em frontend/ (tsc + vite)
-npx playwright test           # em e2e/      (14 passos; sobe API e Vite em portas próprias, regrava as telas e gera os PDFs de exemplo do relatório)
+npx playwright test           # em e2e/      (16 passos; sobe API e Vite em portas próprias, regrava as telas e gera os PDFs de exemplo do relatório)
 ```
 
 Primeira vez no E2E: `cd e2e && npm install && npx playwright install chromium`. O E2E usa banco SQLite temporário e não toca em `backend/data/`. O CI (`.github/workflows/ci.yml`) roda `pytest`, `npm test` e `npm run build`; o E2E **não** roda no CI.
 
-Resultados e capturas das telas: [`S1A.md`](docs/evidencias/S1A.md), [`S1B.md`](docs/evidencias/S1B.md), [`S2-S3-E2E.md`](docs/evidencias/S2-S3-E2E.md), [`R1-melhorias.md`](docs/evidencias/R1-melhorias.md), [`R2-melhorias.md`](docs/evidencias/R2-melhorias.md), [`R3-exportacao-itens.md`](docs/evidencias/R3-exportacao-itens.md), a pasta [`docs/evidencias/telas/`](docs/evidencias/telas/) e os PDFs do relatório ([finalizado](docs/evidencias/relatorio-INS-004.pdf) e [prévia](docs/evidencias/relatorio-previa-INS-005.pdf)).
+Resultados e capturas das telas: [`S1A.md`](docs/evidencias/S1A.md), [`S1B.md`](docs/evidencias/S1B.md), [`S2-S3-E2E.md`](docs/evidencias/S2-S3-E2E.md), [`R1-melhorias.md`](docs/evidencias/R1-melhorias.md), [`R2-melhorias.md`](docs/evidencias/R2-melhorias.md), [`R3-exportacao-itens.md`](docs/evidencias/R3-exportacao-itens.md), [`R4-capa-sema-corpo-relatorio.md`](docs/evidencias/R4-capa-sema-corpo-relatorio.md) (e as de cada sprint, `R4-S1` a `R4-S3`), a pasta [`docs/evidencias/telas/`](docs/evidencias/telas/) e os PDFs do corpo do relatório ([finalizado](docs/evidencias/relatorio-INS-004.pdf), [fluxo completo no padrão do modelo](docs/evidencias/relatorio-corpo-R4.pdf) e [prévia](docs/evidencias/relatorio-previa-INS-005.pdf)).
 
 ## Estrutura de pastas
 
@@ -121,13 +122,24 @@ Resultados e capturas das telas: [`S1A.md`](docs/evidencias/S1A.md), [`S1B.md`](
 
 ## Relatório de vistoria
 
-Em **Inspeções → (abrir uma inspeção) → Gerar relatório** (`/inspecoes/:id/relatorio`). O documento tem seis seções numeradas: 1 Identificação (nº do relatório, INS, processo, status, resultado, datas e data/hora de conclusão), 2 Empreendimento (com CAR e proprietários), 3 Objetivo e observações, 4 Checklist (numerado, com totais e itens críticos não conformes destacados), 5 Registro fotográfico (imagem original, no máximo 2 por página) e 6 Conclusão (resultado e a regra que levou a ele).
+O sistema da SEMA gera a **capa** do relatório técnico (1 Interessado, 2 Assunto, 3 Caracterização do empreendimento e 4 Equipe técnica) e a lavratura dos autos. Este sistema **não gera a capa**: a página **Dados para capa e lavratura** (`/inspecoes/:id/capa`) organiza esses dados para copiar, e o relatório (`/inspecoes/:id/relatorio`, botão **Gerar relatório**) é só o **corpo**, a partir do item 5, para anexar depois da capa.
 
-- **Numeração:** `NNNN/AAAA`, sequencial por ano, atribuída no fechamento, única e nunca reutilizada. Cancelar ou tentar fechar sem sucesso não consome número.
-- **Prévia:** inspeção que não está finalizada gera o relatório sem número e com a marca "PRÉVIA, NÃO FINALIZADO" (no topo de todas as páginas impressas e na diagonal da primeira); usa os dados atuais do local.
-- **Finalizada:** usa a cópia dos dados do empreendimento gravada no fechamento, então não muda se o cadastro do local for editado depois.
-- **Imprimir / Salvar PDF:** usa a impressão do navegador (papel A4, escolha "Salvar como PDF"). O botão só habilita depois que as imagens carregam. Rodapé com nº do relatório, INS e "Sistema fictício/simulado" e "Página X de Y" em todas as páginas. Não há biblioteca de PDF no backend.
-- **Exemplos:** [`relatorio-INS-004.pdf`](docs/evidencias/relatorio-INS-004.pdf) e [`relatorio-previa-INS-005.pdf`](docs/evidencias/relatorio-previa-INS-005.pdf), gerados pelo E2E com dados fictícios.
+**Corpo do relatório** (`/inspecoes/:id/relatorio`):
+- **Cabeçalho mínimo**, sem título de capa: `Protocolo nº ... | Inspeção INS-xxx | Ref. interna NNNN/AAAA` (e `| Relatório SEMA nº ...` quando informado).
+- **5 – Constatações:** 5.1 Relato da vistoria (data e observações da vistoria), 5.2 Checklist (numerado, com totais e itens críticos não conformes destacados) e 5.3 Registro fotográfico (Foto 1, 2…, com legenda, anotação, item vinculado e data de captura; no máximo 2 por página).
+- **6 – Providências tomadas:** o texto e os atos lavrados; ato sem número aparece como "nº a definir".
+- **7 – Conclusão** (resultado e a regra aplicada): a opção **Incluir conclusão** vem ligada; desligada, o item 7 some (`?incluir_conclusao=false`).
+- Ficam **de fora** o empreendimento, a equipe e o interessado (vão na capa) e a assinatura (a autenticação é do sistema da SEMA).
+
+**Ref. interna:** o número interno `NNNN/AAAA`, sequencial por ano, atribuído no fechamento, único e nunca reutilizado. Cancelar ou tentar fechar sem sucesso não consome número. O número oficial que a SEMA atribuir é registrado à parte (**Nº do relatório na SEMA**), mesmo depois do fechamento.
+
+- **Prévia:** inspeção que não está finalizada gera o corpo sem Ref. interna e com a marca "PRÉVIA, NÃO FINALIZADO" (no topo de todas as páginas impressas e na diagonal da primeira).
+- **Imprimir / Salvar PDF:** usa a impressão do navegador (papel A4, escolha "Salvar como PDF"). O botão só habilita depois que as imagens carregam. Rodapé com a Ref. interna, INS e "Sistema fictício/simulado" e "Página X de Y" em todas as páginas. Não há biblioteca de PDF no backend.
+- **Exemplos:** [`relatorio-INS-004.pdf`](docs/evidencias/relatorio-INS-004.pdf), [`relatorio-corpo-R4.pdf`](docs/evidencias/relatorio-corpo-R4.pdf) (fluxo completo no padrão do modelo: interessado MP, responsável com CPF e endereço de correspondência, 3 membros na equipe, 1 notificação) e [`relatorio-previa-INS-005.pdf`](docs/evidencias/relatorio-previa-INS-005.pdf), gerados pelo E2E com dados fictícios.
+
+## Dados para a capa e a lavratura
+
+Página `/inspecoes/:id/capa` (botão **Dados para capa e lavratura** no detalhe). Blocos na ordem da capa e mais **Atos a lavrar**, cada um com **Copiar** por campo, **Copiar bloco** e **Copiar tudo** (texto simples no formato do modelo). Campo vazio aparece como "Não informado" e destacado, com a contagem no topo; Comarca é opcional. Interessado vazio vira "Demanda interna / de ofício". O texto é montado pelo backend (`GET /api/v1/inspecoes/{id}/dados-capa`). Para preencher o que falta: **Editar inspeção** (interessado, assunto, equipe, providências, atos) e **Locais** (nome fantasia, endereço, coordenadas, responsáveis com CPF/CNPJ e correspondência).
 
 ## Dados pessoais (LGPD)
 
@@ -139,6 +151,7 @@ Não há Alembic: ao subir a API, `database.criar_tabelas()` e `preencher_legado
 
 - acrescentam `inspecao.numero_processo`, `inspecao.empreendimento_json`, `inspecao.numero_relatorio` (com índice único) e `local.numero_car`;
 - criam as tabelas `proprietario` e `contador_relatorio`;
+- (R4) acrescentam, também sem perder dados, as colunas `inspecao.interessado_*`, `assunto_tipo`, `assunto_outro`, `providencias_texto` e `numero_relatorio_sema`; `local.logradouro`, `uf` e `cep`; `proprietario.cpf_cnpj` e `corr_*`; e criam as tabelas `equipe_membro` e `ato_lavrado`. Inspeções e locais antigos ficam com esses campos vazios, e as duas saídas (dados para a capa e corpo do relatório) abrem normalmente, com "Não informado" onde falta dado. **Inspeções antigas ainda não finalizadas precisam de ao menos 1 membro na equipe para fechar**;
 - preenchem as inspeções já finalizadas: cópia dos dados do **local atual** (não os do dia do fechamento, que não foram guardados) e número de relatório na ordem do fechamento, no ano de cada fechamento.
 
 Passos: **1)** pare a API; **2)** faça backup de `backend/data/` (o `.db` e a pasta `fotos/`); **3)** atualize o código e suba a API normalmente. Inspeções antigas ficam com o número do processo vazio ("—") até serem editadas. Para começar do zero, pare a API e apague `backend/data/` (isso **apaga todos os dados**).
@@ -204,6 +217,19 @@ O esquema usa apenas tipos e constraints portáveis. O caminho é: definir `DATA
 - **Testes:** backend 229 → 334, frontend 59 → 124 e E2E 11 → 14 passos (mais PDFs do relatório). Os números subiram por causa dos testes novos; nenhum teste existente foi relaxado. Os que mudaram só refletem contrato novo (campo obrigatório, colunas do CSV, rótulos das datas).
 - **Depois da rodada (Parte B):** a exportação dos itens do checklist virou o botão **Exportar itens (CSV)** (`GET /api/v1/exportacao/itens.csv`), sem alterar o CSV por inspeção; a regra de vistoria antes do agendamento foi mantida e `respondido_em` ficou para depois. Backend 334 → 348 e frontend 124 → 125 testes.
 - **Vercel:** cada push em `main` gera um deploy de produção (a integração com o GitHub está ativa; o push desta rodada gerou um deploy `READY`). Para publicar sem push use `vercel deploy --prod` a partir da raiz (veja a seção da Vercel). `VITE_API_URL` aponta para `127.0.0.1`, então o site só funciona no computador onde o backend roda.
+
+## O que mudou na rodada R4
+
+Dados para a capa da SEMA e corpo do relatório técnico (4 sprints; PR de revisão no GitHub).
+
+- **Dados novos da inspeção:** interessado (órgão, unidade, comarca opcional, requerente), assunto (lista + "Outro"), equipe técnica (1..n), providências (texto e atos com tipo e número) e Nº do relatório na SEMA. O protocolo reaproveita o número do processo e o número interno passou a se chamar **Ref. interna**.
+- **Empreendimento e responsável:** nome fantasia (o campo `nome`), endereço (logradouro, município, UF padrão MT, CEP), CPF/CNPJ validado (guardado só com dígitos, exibido com máscara) e endereço para correspondência, com o atalho "Mesmo endereço do empreendimento". Tudo entra na cópia do fechamento.
+- **Coordenadas:** exibição em decimal e em GMS (`LAT 11° 46' 34" S | LONG 59° 05' 12" W`, sem sinal e sem 60"); digitação em decimal ou GMS com máscara na tela de Locais, convertida para decimal ao salvar.
+- **Regras novas:** a **equipe é obrigatória para fechar**; depois do fechamento só o **número dos atos** e o **Nº do relatório na SEMA** são editáveis (`atualizado_em` registra a edição).
+- **Saídas:** página Dados para capa e lavratura (copiar) e corpo do relatório a partir do item 5 (veja as seções acima).
+- **Mensagens de validação em português** com o rótulo do campo (`Objetivo: obrigatória`), em vez do texto em inglês do FastAPI.
+- **Banco existente:** a migração leve acrescenta as colunas e tabelas novas (veja [Atualizando um banco existente](#atualizando-um-banco-existente-migração)); faça uma cópia de `backend/data/` antes.
+- **Testes:** backend 348 → 457, frontend 125 → 159 e E2E 14 → 16 passos. Alguns testes existentes mudaram **por mudança de regra, sem enfraquecer nada**: os auxiliares que fecham inspeção agora informam a equipe; as listas de campos editáveis incluem os campos novos; o contrato de Local/proprietário ganhou campos; o relatório foi reescrito para o corpo a partir do item 5 (os testes dos itens 1 a 4 e do empreendimento no relatório saíram, porque esses dados agora vão na capa). Detalhes em [`R4-capa-sema-corpo-relatorio.md`](docs/evidencias/R4-capa-sema-corpo-relatorio.md).
 
 ## Pendências do projeto
 
