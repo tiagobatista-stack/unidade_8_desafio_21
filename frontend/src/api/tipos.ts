@@ -240,26 +240,31 @@ export interface FotoRelatorio {
   data_captura: string | null;
 }
 
+export interface AtoRelatorio {
+  tipo: string;
+  numero: string | null;
+  rotulo: string; // "Notificação – nº a definir"
+}
+
+/** Corpo do relatório, a partir do item 5 (os itens 1 a 4 vão na capa gerada no sistema da SEMA). */
 export interface Relatorio {
   previa: boolean;
   marca_dagua: string | null;
-  numero_relatorio: string | null;
-  titulo: string;
-  identificacao: {
+  cabecalho: {
+    protocolo: string | null;
     codigo: string;
-    numero_processo: string | null;
-    status: Status;
-    resultado: string | null;
-    data_agendamento: string;
-    data_realizacao: string | null;
-    fechado_em: string | null;
+    ref_interna: string | null; // NNNN/AAAA; nulo na prévia
+    numero_relatorio_sema: string | null;
+    linha: string; // Protocolo nº ... | Inspeção INS-xxx | Ref. interna NNNN/AAAA
   };
-  empreendimento: Empreendimento;
-  objetivo: { objetivo: string; observacoes: string | null; observacoes_vistoria: string | null };
-  checklist: {
-    itens: ItemRelatorio[];
-    totais: { total: number; respondidos: number; conformes: number; nao_conformes: number; nao_aplicaveis: number; nao_respondidos: number };
+  constatacoes: {
+    relato: { data_realizacao: string | null; observacoes_vistoria: string | null };
+    checklist: {
+      itens: ItemRelatorio[];
+      totais: { total: number; respondidos: number; conformes: number; nao_conformes: number; nao_aplicaveis: number; nao_respondidos: number };
+    };
+    fotos: FotoRelatorio[];
   };
-  fotos: FotoRelatorio[];
-  conclusao: { resultado: string | null; regra: string };
+  providencias: { texto: string | null; atos: AtoRelatorio[] };
+  conclusao: { resultado: string | null; regra: string } | null; // nulo com "Incluir conclusão" desligado
 }

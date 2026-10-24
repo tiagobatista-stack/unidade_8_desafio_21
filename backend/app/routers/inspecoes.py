@@ -62,8 +62,8 @@ def fechar(inspecao_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{inspecao_id}/relatorio", response_model=RelatorioOut)
-def relatorio(inspecao_id: int, db: Session = Depends(get_db)):
-    return relatorio_service.montar(service.obter(db, inspecao_id))
+def relatorio(inspecao_id: int, incluir_conclusao: bool = True, db: Session = Depends(get_db)):
+    return relatorio_service.montar(service.obter(db, inspecao_id), incluir_conclusao)
 
 
 @router.get("/{inspecao_id}/dados-capa", response_model=DadosCapaOut)

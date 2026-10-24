@@ -103,23 +103,80 @@ def test_numero_aparece_no_detalhe_da_finalizada(api):
     assert api.get(f"{BASE}/inspecoes/{d['id']}").json()["numero_relatorio"] == d["numero_relatorio"]
 
 
-# ---------- estrutura do relatório finalizado ----------
-def test_relatorio_finalizado_traz_as_seis_secoes_na_ordem(api):
-    d = finalizada(api)
-    r = relatorio(api, d["id"])
+# ---------- estrutura do corpo do relatório (a partir do item 5) ----------
+def test_corpo_comeca_no_item_5_e_nao_traz_os_itens_1_a_4(api):
+    r = relatorio(api, finalizada(api)["id"])
     assert r["previa"] is False and r["marca_dagua"] is None
-    assert r["numero_relatorio"] == "0004/2026" and r["titulo"] == "Relatório de Vistoria nº 0004/2026"
-    assert list(r)[4:] == ["identificacao", "empreendimento", "objetivo", "checklist", "fotos", "conclusao"]  # ordem das seções
-    ident = r["identificacao"]
-    assert (ident["codigo"], ident["numero_processo"], ident["status"], ident["resultado"]) == ("INS-006", "SEMA-PRO-2026/12345", "FINALIZADA", "APROVADA")
-    assert ident["data_agendamento"] == "2026-10-20" and ident["data_realizacao"] == "2026-10-23" and ident["fechado_em"].startswith("2026-10-23T")
-    assert r["objetivo"]["objetivo"] == "Objetivo de teste"
-    assert r["empreendimento"]["nome"] == "Fazenda Horizonte Azul" and r["empreendimento"]["numero_car"].startswith("MT-5107925-")
+    # ordem do corpo: cabeçalho, 5 Constatações, 6 Providências, 7 Conclusão
+    assert list(r) == ["previa", "marca_dagua", "cabecalho", "constatacoes", "providencias", "conclusao"]
+    assert list(r["constatacoes"]) == ["relato", "checklist", "fotos"]  # 5.1, 5.2, 5.3
+    texto = str(r)
+    for fora in ("empreendimento", "equipe", "interessado", "assunto", "proprietarios", "numero_car", "latitude", "assinatura"):
+        assert fora not in texto, fora  # capa (1 a 4) e assinatura ficam no sistema da SEMA
+    assert "titulo" not in r and "identificacao" not in r and "objetivo" not in r
+
+
+def test_cabecalho_minimo_casa_com_a_capa(api):
+    d = finalizada(api)
+    c = relatorio(api, d["id"])["cabecalho"]
+    assert c["linha"] == "Protocolo nº SEMA-PRO-2026/12345 | Inspeção INS-006 | Ref. interna 0004/2026"
+    assert (c["protocolo"], c["codigo"], c["ref_interna"], c["numero_relatorio_sema"]) == ("SEMA-PRO-2026/12345", "INS-006", "0004/2026", None)
+
+
+def test_cabecalho_acrescenta_o_relatorio_sema_quando_informado(api):
+    d = finalizada(api)
+    assert api.patch(f"{BASE}/inspecoes/{d['id']}", json={"numero_relatorio_sema": "RT-0099/2030"}).status_code == 200
+    c = relatorio(api, d["id"])["cabecalho"]
+    assert c["linha"] == "Protocolo nº SEMA-PRO-2026/12345 | Inspeção INS-006 | Ref. interna 0004/2026 | Relatório SEMA nº RT-0099/2030"
+    assert c["numero_relatorio_sema"] == "RT-0099/2030"
+
+
+def test_relato_da_vistoria_traz_data_e_observacoes(api):
+    d = nova(api)
+    api.patch(f"{BASE}/inspecoes/{d['id']}", json={"observacoes_vistoria": "Percorrido o trecho norte."})
+    responder(api, d)
+    api.post(f"{BASE}/inspecoes/{d['id']}/fechar")
+    rel = relatorio(api, d["id"])["constatacoes"]["relato"]
+    assert rel == {"data_realizacao": "2026-10-23", "observacoes_vistoria": "Percorrido o trecho norte."}
+
+
+def test_providencias_com_atos_e_numero_a_definir(api):
+    d = nova(api)
+    api.patch(f"{BASE}/inspecoes/{d['id']}", json={
+        "providencias_texto": "Notificado o responsável.",
+        "atos": [{"tipo": "Notificação"}, {"tipo": "Auto de Infração", "numero": "AI-0001/2030"}]})
+    responder(api, d)
+    api.post(f"{BASE}/inspecoes/{d['id']}/fechar")
+    p = relatorio(api, d["id"])["providencias"]
+    assert p["texto"] == "Notificado o responsável."
+    assert [(a["tipo"], a["numero"], a["rotulo"]) for a in p["atos"]] == [
+        ("Notificação", None, "Notificação – nº a definir"), ("Auto de Infração", "AI-0001/2030", "Auto de Infração – nº AI-0001/2030")]
+    # registrado o número depois do fechamento, o relatório passa a mostrá-lo
+    atos = api.get(f"{BASE}/inspecoes/{d['id']}").json()["atos"]
+    api.patch(f"{BASE}/inspecoes/{d['id']}", json={"atos": [
+        {"id": atos[0]["id"], "tipo": "Notificação", "numero": "NOT-0007/2030"}, {"id": atos[1]["id"], "tipo": "Auto de Infração", "numero": "AI-0001/2030"}]})
+    assert relatorio(api, d["id"])["providencias"]["atos"][0]["rotulo"] == "Notificação – nº NOT-0007/2030"
+
+
+def test_sem_providencias_a_secao_vem_vazia(api):
+    p = relatorio(api, finalizada(api)["id"])["providencias"]
+    assert p == {"texto": None, "atos": []}
+
+
+def test_incluir_conclusao_ligado_por_padrao_e_desligavel(api):
+    d = finalizada(api)
+    base = f"{BASE}/inspecoes/{d['id']}/relatorio"
+    assert api.get(base).json()["conclusao"]["resultado"] == "APROVADA"
+    assert api.get(base, params={"incluir_conclusao": "true"}).json()["conclusao"]["resultado"] == "APROVADA"
+    off = api.get(base, params={"incluir_conclusao": "false"}).json()
+    assert off["conclusao"] is None
+    assert off["constatacoes"]["checklist"]["totais"]["total"] == 6  # o resto do corpo não muda
+    assert api.get(base, params={"incluir_conclusao": "talvez"}).status_code == 422
 
 
 def test_checklist_numerado_com_totais_e_criticos_destacados(api):
     d = finalizada(api, {2: "NAO_CONFORME", 4: "NAO_CONFORME", 5: "NAO_SE_APLICA"}, {2: "crítico ruim", 4: "placa gasta"})
-    c = relatorio(api, d["id"])["checklist"]
+    c = relatorio(api, d["id"])["constatacoes"]["checklist"]
     assert [i["numero"] for i in c["itens"]] == [1, 2, 3, 4, 5, 6]
     assert c["totais"] == {"total": 6, "respondidos": 6, "conformes": 3, "nao_conformes": 2, "nao_aplicaveis": 1, "nao_respondidos": 0}
     destaque = {i["numero"]: i["critico_nao_conforme"] for i in c["itens"]}
@@ -154,7 +211,7 @@ def test_fotos_numeradas_com_original_e_item_vinculado(api):
     f1 = enviar(imagens.jpeg(1), "Primeira anotação", legenda="Legenda um", item_id=item4["id"], data_captura="2026-10-22T09:30:00")
     f2 = enviar(imagens.jpeg(2), "Segunda anotação")
     api.post(f"{BASE}/inspecoes/{d['id']}/fechar")
-    fotos = relatorio(api, d["id"])["fotos"]
+    fotos = relatorio(api, d["id"])["constatacoes"]["fotos"]
     assert [f["numero"] for f in fotos] == [1, 2]
     assert fotos[0]["url_original"] == f1["url_original"] and "versao=original" in fotos[0]["url_original"]  # original, não miniatura
     assert (fotos[0]["legenda"], fotos[0]["anotacao"]) == ("Legenda um", "Primeira anotação")
@@ -165,7 +222,7 @@ def test_fotos_numeradas_com_original_e_item_vinculado(api):
 
 
 def test_relatorio_sem_fotos_tem_lista_vazia(api):
-    assert relatorio(api, finalizada(api)["id"])["fotos"] == []
+    assert relatorio(api, finalizada(api)["id"])["constatacoes"]["fotos"] == []
 
 
 def test_relatorio_de_inspecao_inexistente_404(api):
@@ -179,18 +236,17 @@ def test_previa_em_andamento_sem_numero_e_com_marca(api):
     api.patch(f"{BASE}/inspecoes/{d['id']}/itens/{d['itens'][0]['id']}", json={"situacao": "CONFORME"})
     r = relatorio(api, d["id"])
     assert r["previa"] is True and r["marca_dagua"] == "PRÉVIA, NÃO FINALIZADO"
-    assert r["numero_relatorio"] is None and r["titulo"] == "Relatório de Vistoria (sem número)"
+    assert r["cabecalho"]["ref_interna"] is None and r["cabecalho"]["linha"].endswith("Ref. interna: sem número (prévia)")
     assert r["conclusao"]["resultado"] is None and "5 itens não respondidos" in r["conclusao"]["regra"]
-    assert r["identificacao"]["fechado_em"] is None
 
 
 def test_previa_aberta_e_cancelada(api):
     aberta = relatorio(api, nova(api)["id"])
-    assert aberta["previa"] and aberta["marca_dagua"] == "PRÉVIA, NÃO FINALIZADO" and aberta["numero_relatorio"] is None
+    assert aberta["previa"] and aberta["marca_dagua"] == "PRÉVIA, NÃO FINALIZADO" and aberta["cabecalho"]["ref_interna"] is None
     c = nova(api)
     api.post(f"{BASE}/inspecoes/{c['id']}/cancelar", json={"motivo": "teste"})
     cancelada = relatorio(api, c["id"])
-    assert cancelada["previa"] and cancelada["marca_dagua"] == "CANCELADA, NÃO FINALIZADO" and cancelada["numero_relatorio"] is None
+    assert cancelada["previa"] and cancelada["marca_dagua"] == "CANCELADA, NÃO FINALIZADO" and cancelada["cabecalho"]["ref_interna"] is None
 
 
 def test_gerar_a_previa_nao_consome_numero(api):
@@ -199,31 +255,3 @@ def test_gerar_a_previa_nao_consome_numero(api):
     for _ in range(3):
         relatorio(api, d["id"])
     assert api.post(f"{BASE}/inspecoes/{d['id']}/fechar").json()["numero_relatorio"] == "0004/2026"
-
-
-# ---------- dados do empreendimento no relatório ----------
-def editar_local(api, **mudancas):
-    atual = api.get(f"{BASE}/locais/1").json()
-    corpo = {k: atual[k] for k in ("nome", "municipio", "tipo", "latitude", "longitude", "numero_car")}
-    corpo["proprietarios"] = [{"nome": p["nome"], "telefone": p["telefone"]} for p in atual["proprietarios"]]
-    corpo.update(mudancas)
-    assert api.put(f"{BASE}/locais/1", json=corpo).status_code == 200
-
-
-def test_relatorio_finalizado_usa_a_copia_e_a_previa_usa_os_dados_atuais(api):
-    d = finalizada(api)
-    previa = nova(api)
-    responder(api, previa)
-    editar_local(api, nome="Nome Alterado Fictício", numero_car="mt-0-alterado", proprietarios=[{"nome": "Dono Alterado Fictício"}])
-    fin = relatorio(api, d["id"])["empreendimento"]
-    assert fin["nome"] == "Fazenda Horizonte Azul" and fin["numero_car"].startswith("MT-5107925-")
-    assert fin["proprietarios"][0]["nome"] == "Proprietário Fictício Um"
-    atual = relatorio(api, previa["id"])["empreendimento"]
-    assert atual["nome"] == "Nome Alterado Fictício" and atual["numero_car"] == "MT-0-ALTERADO"
-    assert [p["nome"] for p in atual["proprietarios"]] == ["Dono Alterado Fictício"]
-
-
-def test_car_vazio_chega_como_nulo_para_a_tela_mostrar_nao_informado(api):
-    d = finalizada(api, local_id=2)  # a serraria do exemplo não tem CAR nem proprietários listados com CAR
-    emp = relatorio(api, d["id"])["empreendimento"]
-    assert emp["numero_car"] is None

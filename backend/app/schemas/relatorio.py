@@ -2,22 +2,21 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
-from app.schemas.local import EmpreendimentoOut
 
+class CabecalhoRel(BaseModel):
+    """Cabeçalho mínimo, para casar com a capa gerada no sistema da SEMA (sem título de capa)."""
 
-class IdentificacaoRel(BaseModel):
+    protocolo: str | None
     codigo: str
-    numero_processo: str | None
-    status: str
-    resultado: str | None
-    data_agendamento: date
+    ref_interna: str | None  # NNNN/AAAA; nulo na prévia
+    numero_relatorio_sema: str | None
+    linha: str  # Protocolo nº ... | Inspeção INS-xxx | Ref. interna NNNN/AAAA [| Relatório SEMA nº ...]
+
+
+class RelatoRel(BaseModel):
+    """5.1 Relato da vistoria."""
+
     data_realizacao: date | None
-    fechado_em: datetime | None
-
-
-class ObjetivoRel(BaseModel):
-    objetivo: str
-    observacoes: str | None
     observacoes_vistoria: str | None
 
 
@@ -55,19 +54,36 @@ class FotoRel(BaseModel):
     data_captura: datetime | None
 
 
+class AtoRel(BaseModel):
+    tipo: str
+    numero: str | None
+    rotulo: str  # "Notificação – nº NOT-1" ou "Notificação – nº a definir"
+
+
+class ProvidenciasRel(BaseModel):
+    texto: str | None
+    atos: list[AtoRel]
+
+
+class ConstatacoesRel(BaseModel):
+    """Item 5: relato (5.1), checklist (5.2) e registro fotográfico (5.3)."""
+
+    relato: RelatoRel
+    checklist: ChecklistRel
+    fotos: list[FotoRel]
+
+
 class ConclusaoRel(BaseModel):
     resultado: str | None
     regra: str
 
 
 class RelatorioOut(BaseModel):
+    """Corpo do relatório técnico, a partir do item 5 (os itens 1 a 4 vão na capa gerada no sistema da SEMA)."""
+
     previa: bool
     marca_dagua: str | None
-    numero_relatorio: str | None
-    titulo: str
-    identificacao: IdentificacaoRel
-    empreendimento: EmpreendimentoOut
-    objetivo: ObjetivoRel
-    checklist: ChecklistRel
-    fotos: list[FotoRel]
-    conclusao: ConclusaoRel
+    cabecalho: CabecalhoRel
+    constatacoes: ConstatacoesRel
+    providencias: ProvidenciasRel
+    conclusao: ConclusaoRel | None  # nulo quando "Incluir conclusão" está desligado

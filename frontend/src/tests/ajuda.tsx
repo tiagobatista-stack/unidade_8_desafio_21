@@ -124,37 +124,38 @@ export function resumo(id: number, parcial: Partial<InspecaoResumo> = {}): Inspe
 
 export const pagina = <T,>(dados: T[]) => ({ corpo: { dados, total: dados.length, pagina: 1, tamanho: 100 } });
 
-/** Relatório de uma inspeção finalizada, como a API devolve; cada teste sobrescreve o que precisa. */
+/** Corpo do relatório de uma inspeção finalizada, como a API devolve; cada teste sobrescreve o que precisa. */
 export function relatorio(parcial: Partial<Relatorio> = {}): Relatorio {
   return {
-    previa: false, marca_dagua: null, numero_relatorio: "0004/2026", titulo: "Relatório de Vistoria nº 0004/2026",
-    identificacao: {
-      codigo: "INS-004", numero_processo: "SEMA-PRO-2026/12345", status: "FINALIZADA", resultado: "REPROVADA",
-      data_agendamento: "2026-10-20", data_realizacao: "2026-10-21", fechado_em: "2026-10-23T17:05:00",
+    previa: false, marca_dagua: null,
+    cabecalho: {
+      protocolo: "SEMA-PRO-2026/12345", codigo: "INS-004", ref_interna: "0004/2026", numero_relatorio_sema: null,
+      linha: "Protocolo nº SEMA-PRO-2026/12345 | Inspeção INS-004 | Ref. interna 0004/2026",
     },
-    empreendimento: {
-      nome: "Fazenda Horizonte Azul", municipio: "Vila Nova do Cerrado", tipo: "Propriedade rural", latitude: -10.42318,
-      longitude: -58.71264, numero_car: "MT-5107925-00000000000000000000000000000001",
-      proprietarios: [{ nome: "Proprietário Fictício Um", telefone: "65900000001", telefone_formatado: "(65) 90000-0001" }],
-    },
-    objetivo: { objetivo: "Vistoria de rotina", observacoes: "Observação geral", observacoes_vistoria: "Texto da vistoria" },
-    checklist: {
-      itens: [
-        { numero: 1, descricao: "Licença ambiental", critico: true, situacao: "CONFORME", observacao: null, critico_nao_conforme: false },
-        { numero: 2, descricao: "Destinação de efluentes", critico: true, situacao: "NAO_CONFORME", observacao: "Transbordando", critico_nao_conforme: true },
-        { numero: 3, descricao: "Sinalização", critico: false, situacao: "NAO_CONFORME", observacao: "Placa gasta", critico_nao_conforme: false },
-        { numero: 4, descricao: "Resíduos", critico: false, situacao: "NAO_SE_APLICA", observacao: null, critico_nao_conforme: false },
+    constatacoes: {
+      relato: { data_realizacao: "2026-10-21", observacoes_vistoria: "Texto da vistoria" },
+      checklist: {
+        itens: [
+          { numero: 1, descricao: "Licença ambiental", critico: true, situacao: "CONFORME", observacao: null, critico_nao_conforme: false },
+          { numero: 2, descricao: "Destinação de efluentes", critico: true, situacao: "NAO_CONFORME", observacao: "Transbordando", critico_nao_conforme: true },
+          { numero: 3, descricao: "Sinalização", critico: false, situacao: "NAO_CONFORME", observacao: "Placa gasta", critico_nao_conforme: false },
+          { numero: 4, descricao: "Resíduos", critico: false, situacao: "NAO_SE_APLICA", observacao: null, critico_nao_conforme: false },
+        ],
+        totais: { total: 4, respondidos: 4, conformes: 1, nao_conformes: 2, nao_aplicaveis: 1, nao_respondidos: 0 },
+      },
+      fotos: [
+        { numero: 1, url_original: "/api/v1/inspecoes/4/fotos/1/arquivo?versao=original", nome_original: "a.jpg", legenda: "Caixa separadora",
+          anotacao: "Transbordamento junto à base.", item_numero: 2, item_descricao: "Destinação de efluentes", data_captura: "2026-10-21T09:30:00" },
+        { numero: 2, url_original: "/api/v1/inspecoes/4/fotos/2/arquivo?versao=original", nome_original: "b.jpg", legenda: null,
+          anotacao: "Vista geral.", item_numero: null, item_descricao: null, data_captura: null },
+        { numero: 3, url_original: "/api/v1/inspecoes/4/fotos/3/arquivo?versao=original", nome_original: "c.jpg", legenda: null,
+          anotacao: "Terceira foto.", item_numero: null, item_descricao: null, data_captura: null },
       ],
-      totais: { total: 4, respondidos: 4, conformes: 1, nao_conformes: 2, nao_aplicaveis: 1, nao_respondidos: 0 },
     },
-    fotos: [
-      { numero: 1, url_original: "/api/v1/inspecoes/4/fotos/1/arquivo?versao=original", nome_original: "a.jpg", legenda: "Caixa separadora",
-        anotacao: "Transbordamento junto à base.", item_numero: 2, item_descricao: "Destinação de efluentes", data_captura: "2026-10-21T09:30:00" },
-      { numero: 2, url_original: "/api/v1/inspecoes/4/fotos/2/arquivo?versao=original", nome_original: "b.jpg", legenda: null,
-        anotacao: "Vista geral.", item_numero: null, item_descricao: null, data_captura: null },
-      { numero: 3, url_original: "/api/v1/inspecoes/4/fotos/3/arquivo?versao=original", nome_original: "c.jpg", legenda: null,
-        anotacao: "Terceira foto.", item_numero: null, item_descricao: null, data_captura: null },
-    ],
+    providencias: {
+      texto: "Notificado o responsável.",
+      atos: [{ tipo: "Notificação", numero: null, rotulo: "Notificação – nº a definir" }, { tipo: "Auto de Infração", numero: "AI-0001/2030", rotulo: "Auto de Infração – nº AI-0001/2030" }],
+    },
     conclusao: { resultado: "REPROVADA", regra: "1 item crítico não conforme" },
     ...parcial,
   };
