@@ -340,21 +340,19 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await page.getByRole("link", { name: "INS-004", exact: true }).click();
     await expect(page.getByTestId("numero-relatorio")).toHaveText("nº 0004/2026"); // as 3 do exemplo são 0001..0003
     await page.getByRole("link", { name: "Gerar relatório" }).click();
-    await expect(page.getByTestId("titulo-relatorio")).toHaveText("Relatório de Vistoria nº 0004/2026");
-    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
-      "1. Identificação", "2. Empreendimento", "3. Objetivo e observações", "4. Checklist", "5. Registro fotográfico", "6. Conclusão",
-    ]);
+    await expect(page.getByTestId("cabecalho-relatorio")).toHaveText("Protocolo nº SEMA-PRO-2026/10004 | Inspeção INS-004 | Ref. interna 0004/2026");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText(["5 – Constatações", "6 – Providências tomadas", "7 – Conclusão"]); // corpo a partir do item 5
     await expect(page.getByTestId("foto-relatorio")).toHaveCount(4);
     await expect(page.getByRole("button", { name: "Imprimir / Salvar PDF" })).toBeEnabled(); // imagens já carregadas
     const larguras = await page.locator("figure img").evaluateAll((imgs) => imgs.map((i) => (i as HTMLImageElement).naturalWidth));
     expect(larguras.every((w) => w > 0)).toBe(true);
-    // o relatório usa a cópia do fechamento (o Local foi editado depois, no passo anterior)
-    await expect(page.getByTestId("rel-proprietarios")).toContainText("Proprietário Fictício Quatro");
-    await expect(page.getByTestId("rel-proprietarios")).not.toContainText("Dono Novo Fictício");
-    await expect(page.getByTestId("rel-car")).toContainText("MT-5107925-00000000000000000000000000000004");
+    // empreendimento, equipe e interessado vão na capa gerada no sistema da SEMA: não fazem parte do corpo
+    for (const fora of ["Proprietário Fictício Quatro", "MT-5107925", "Equipe técnica", "Interessado", "Assinatura"]) {
+      await expect(page.getByTestId("relatorio")).not.toContainText(fora);
+    }
     await expect(page.getByTestId("conclusao-resultado")).toContainText("Aprovada");
     await expect(page.getByTestId("conclusao-regra")).toContainText("Nenhum item não conforme");
-    await expect(page.getByTestId("rodape-relatorio")).toContainText("Relatório nº 0004/2026 · INS-004 · Sistema fictício/simulado");
+    await expect(page.getByTestId("rodape-relatorio")).toContainText("Ref. interna 0004/2026 · INS-004 · Sistema fictício/simulado");
     await tela(page, "relatorio-finalizado-INS-004");
     // modo de impressão: sem menu nem botões
     await page.emulateMedia({ media: "print" });
@@ -364,7 +362,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
     const pdf = path.join(raiz, "docs", "evidencias", "relatorio-INS-004.pdf");
     await page.pdf({ path: pdf, format: "A4", preferCSSPageSize: true, printBackground: true });
     const paginas = (readFileSync(pdf).toString("latin1").match(/\/Type\s*\/Page(?!s)/g) ?? []).length;
-    expect(paginas).toBeGreaterThanOrEqual(4); // dados + checklist, duas páginas de fotos (pares) e conclusão
+    expect(paginas).toBeGreaterThanOrEqual(3); // constatações + checklist e duas páginas de fotos (pares)
     await page.emulateMedia({ media: "screen" });
     // prévia: inspeção aberta, sem número e com a marca
     await page.goto("/inspecoes");
@@ -372,8 +370,7 @@ test.describe.serial("Fluxo completo do MVP", () => {
     await expect(page.getByTestId("numero-relatorio")).toHaveCount(0);
     await page.getByRole("link", { name: "Gerar relatório" }).click();
     await expect(page.getByTestId("marca-dagua")).toHaveText("PRÉVIA, NÃO FINALIZADO");
-    await expect(page.getByTestId("titulo-relatorio")).toHaveText("Relatório de Vistoria (sem número)");
-    await expect(page.getByTestId("rel-numero")).toHaveText("— (prévia)");
+    await expect(page.getByTestId("cabecalho-relatorio")).toHaveText(/^Protocolo nº \S+ \| Inspeção INS-005 \| Ref\. interna: sem número \(prévia\)$/); // o protocolo foi editado em passo anterior
     await tela(page, "relatorio-previa-nao-finalizado");
     await page.emulateMedia({ media: "print" });
     await page.pdf({ path: path.join(raiz, "docs", "evidencias", "relatorio-previa-INS-005.pdf"), format: "A4", preferCSSPageSize: true, printBackground: true });
@@ -413,5 +410,155 @@ test.describe.serial("Fluxo completo do MVP", () => {
     writeFileSync(path.join(raiz, "docs", "evidencias", "itens-checklist-e2e.csv"), csvItens, "utf-8");
     const verif = await (await request.get(`${API}/utilitarios/verificar-fotos`)).json();
     expect(verif.total_inconsistencias).toBe(0);
+  });
+  test("Dados para a capa e lavratura: blocos, campos faltando e Copiar tudo igual ao texto da API (R4-S3)", async ({ page, request, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    const lista = (await (await request.get(`${API}/inspecoes?tamanho=100`)).json()).dados;
+    const id = lista.find((i: { codigo: string }) => i.codigo === "INS-001").id;
+    await page.goto(`/inspecoes/${id}`);
+    await page.getByRole("link", { name: "Dados para capa e lavratura" }).click();
+    await expect(page.getByRole("heading", { name: /Dados para a capa e lavratura — INS-001/ })).toBeVisible();
+    const titulos = await page.getByRole("heading", { level: 2 }).allTextContents();
+    expect(titulos).toEqual(["1 – Interessado", "2 – Assunto", "3 – Caracterização do empreendimento", "4 – Equipe técnica", "Atos a lavrar"]);
+    await expect(page.getByTestId("bloco-interessado")).toContainText("Ministério Público do Estado de Mato Grosso");
+    await expect(page.getByTestId("resumo-faltando")).toContainText("2 campos não informados"); // CPF/CNPJ do 2º responsável (capa e atos)
+    await expect(page.getByTestId("campo-faltando").first()).toContainText("Não informado");
+    await tela(page, "dados-capa-e-lavratura");
+    await page.getByRole("button", { name: "Copiar tudo" }).click();
+    await expect(page.getByTestId("aviso-copia")).toContainText("Copiado: todos os dados.");
+    // o Windows entrega a área de transferência com quebras CRLF; o conteúdo é o mesmo
+    const copiado = (await page.evaluate(() => navigator.clipboard.readText())).split("\r\n").join("\n");
+    const esperado = (await (await request.get(`${API}/inspecoes/${id}/dados-capa`)).json()).texto_completo;
+    expect(copiado).toBe(esperado);
+    expect(copiado.split("\n").slice(0, 3)).toEqual([
+      "1 – Interessado:", "Ministério Público do Estado de Mato Grosso - 1ª Promotoria de Justiça Cível", "Comarca de Juína",
+    ]);
+    await page.getByRole("button", { name: "Copiar Requerente" }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("Promotor de Justiça");
+  });
+  test("R4: inspeção completa no padrão do modelo, da capa ao corpo do relatório em PDF", async ({ page, request, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    // 1) Local com nome fantasia, endereço, coordenadas em GMS e responsável com CPF e endereço de correspondência
+    await page.goto("/locais/novo");
+    await page.getByLabel("Nome do local").fill("Fazenda Modelo Fictícia");
+    await page.getByLabel("Município do local").fill("Cidade Modelo Fictícia");
+    await page.getByLabel("Tipo do local").fill("Propriedade rural");
+    await page.getByLabel("Logradouro do empreendimento").fill("Zona Rural, aos fundos da Fazenda Modelo Fictícia");
+    await page.getByLabel("CEP do empreendimento").fill("78320000");
+    await page.getByLabel("Graus, minutos e segundos (GMS)").check();
+    await page.getByLabel("Latitude GMS do local").pressSequentially("114634s");
+    await page.getByLabel("Longitude GMS do local").pressSequentially("059 05 12 w");
+    await expect(page.getByLabel("Latitude GMS do local")).toHaveValue("11° 46' 34\" S");
+    await expect(page.getByLabel("Longitude GMS do local")).toHaveValue("059° 05' 12\" W");
+    await page.getByLabel("Número do CAR").fill("MT-5107925-00000000000000000000000000000077");
+    await page.getByRole("button", { name: "+ Adicionar proprietário" }).click();
+    await page.getByLabel("Nome do proprietário 1").fill("Responsável Modelo Fictício");
+    await page.getByLabel("CPF/CNPJ do proprietário 1").pressSequentially("52998224725");
+    await expect(page.getByLabel("CPF/CNPJ do proprietário 1")).toHaveValue("529.982.247-25");
+    await page.getByLabel("Telefone do proprietário 1").fill("65900000077");
+    await page.getByLabel("Logradouro de correspondência do proprietário 1").fill("Rua das Acácias");
+    await page.getByLabel("Número de correspondência do proprietário 1").fill("45");
+    await page.getByLabel("Bairro de correspondência do proprietário 1").fill("Centro");
+    await page.getByLabel("Município de correspondência do proprietário 1").fill("Cidade Modelo Fictícia");
+    await page.getByLabel("UF de correspondência do proprietário 1").fill("MT");
+    await page.getByLabel("CEP de correspondência do proprietário 1").pressSequentially("78320011");
+    await tela(page, "local-modelo-gms-cpf-correspondencia");
+    await page.getByRole("button", { name: "Cadastrar local" }).click();
+    await expect(page.getByRole("row").filter({ hasText: "Fazenda Modelo Fictícia" })).toContainText("Responsável Modelo Fictício");
+
+    // 2) Inspeção: interessado MP, assunto, 3 membros na equipe e 1 notificação sem número
+    await page.goto("/inspecoes/nova");
+    await page.getByLabel("Número do processo").fill("212345/2030");
+    await page.getByLabel("Local", { exact: true }).selectOption({ label: "Fazenda Modelo Fictícia — Cidade Modelo Fictícia" });
+    await page.getByLabel("Data de agendamento").fill("2026-10-20");
+    await page.getByLabel("Objetivo", { exact: true }).fill("Vistoria de constatação em atendimento ao Ministério Público (exemplo fictício)");
+    await page.getByLabel("Órgão / entidade", { exact: true }).fill("Ministério Público do Estado de Mato Grosso");
+    await page.getByLabel("Unidade", { exact: true }).fill("1ª Promotoria de Justiça Cível");
+    await page.getByLabel("Comarca (opcional)").fill("Comarca de Juína");
+    await page.getByLabel("Requerente", { exact: true }).fill("Promotor de Justiça");
+    await page.getByLabel("Tipo de vistoria").selectOption("Atendimento a Denúncia");
+    const equipe = [
+      ["Analista Modelo Um", "Engenheiro Florestal", "SEMA-MT / Superintendência de Fiscalização"],
+      ["Analista Modelo Dois", "Técnica Ambiental", "SEMA-MT / Superintendência de Fiscalização"],
+      ["Analista Modelo Três", "Fiscal Ambiental", "SEMA-MT / Superintendência de Fiscalização"],
+    ];
+    for (const [i, [nome, cargo, orgao]] of equipe.entries()) {
+      await page.getByRole("button", { name: "+ Adicionar membro" }).click();
+      await page.getByLabel(`Nome do membro ${i + 1}`).fill(nome);
+      await page.getByLabel(`Cargo / função do membro ${i + 1}`).fill(cargo);
+      await page.getByLabel(`Órgão / unidade do membro ${i + 1}`).fill(orgao);
+    }
+    await page.getByLabel("Providências (texto livre)").fill("Notificado o responsável para apresentar a documentação em 10 dias.");
+    await page.getByRole("button", { name: "+ Adicionar ato" }).click();
+    await expect(page.getByLabel("Tipo do ato 1")).toHaveValue("Notificação");
+    await tela(page, "nova-inspecao-modelo-capa-sema");
+    await page.getByRole("button", { name: "Cadastrar inspeção" }).click();
+    await expect(page.getByRole("heading", { name: /^INS-\d+$/ })).toBeVisible();
+    const codigo = (await page.getByRole("heading", { name: /^INS-\d+$/ }).textContent())!.trim();
+
+    // 3) Responder o checklist e fechar (a equipe informada permite fechar)
+    const situacoes = page.getByLabel(/^Situação de /);
+    await expect(situacoes).toHaveCount(6);
+    for (let i = 0; i < 6; i++) {
+      await situacoes.nth(i).selectOption("CONFORME");
+      await expect(situacoes.nth(i)).toHaveValue("CONFORME");
+    }
+    await page.getByRole("button", { name: "Fechar inspeção" }).click();
+    await page.getByRole("button", { name: "Confirmar fechamento" }).click();
+    await expect(page.getByText("Somente leitura", { exact: true })).toBeVisible();
+
+    // 4) Dados para a capa e a lavratura: tudo preenchido, copiar tudo
+    await page.getByRole("link", { name: "Dados para capa e lavratura" }).click();
+    await expect(page.getByRole("heading", { name: new RegExp(`Dados para a capa e lavratura — ${codigo}`) })).toBeVisible();
+    await expect(page.getByTestId("resumo-faltando")).toContainText("Todos os campos estão preenchidos.");
+    await tela(page, "dados-capa-modelo-completo");
+    await page.getByRole("button", { name: "Copiar tudo" }).click();
+    const copiado = (await page.evaluate(() => navigator.clipboard.readText())).split("\r\n").join("\n");
+    for (const trecho of [
+      "1 – Interessado:", "Ministério Público do Estado de Mato Grosso - 1ª Promotoria de Justiça Cível", "Comarca de Juína",
+      "Protocolo nº 212345/2030", "Requerente: Promotor de Justiça", "2 – Assunto:\nAtendimento a Denúncia",
+      "Nome fantasia: Fazenda Modelo Fictícia", "CPF: 529.982.247-25", "Coordenadas: LAT 11° 46' 34\" S | LONG 59° 05' 12\" W",
+      "Endereço: Zona Rural, aos fundos da Fazenda Modelo Fictícia, Cidade Modelo Fictícia/MT", "CEP: 78.320-000",
+      "Analista Modelo Três – Fiscal Ambiental", "Ato 1: Notificação (nº a definir)", "Telefone: (65) 90000-0077",
+      "Endereço para correspondência: Rua das Acácias, 45, Centro, Cidade Modelo Fictícia/MT – CEP 78.320-011",
+    ]) {
+      expect(copiado).toContain(trecho);
+    }
+
+    // 5) A SEMA lavrou a notificação: registrar o número (e o nº do relatório) depois do fechamento
+    await page.getByRole("link", { name: `← ${codigo}` }).click();
+    await page.getByRole("link", { name: "Registrar números da SEMA" }).click();
+    await expect(page.getByLabel("Tipo do ato 1")).toHaveCount(0); // depois de fechar o tipo não muda
+    await expect(page.getByLabel("Órgão / entidade", { exact: true })).toHaveCount(0);
+    await page.getByLabel("Número do ato 1").fill("NOT-0001/2030");
+    await page.getByLabel("Nº do relatório na SEMA").fill("RT-0001/2030");
+    await tela(page, "registrar-numeros-da-sema-apos-fechar");
+    await page.getByRole("button", { name: "Salvar alterações" }).click();
+    await expect(page.getByTestId("numero-relatorio-sema")).toHaveText("nº RT-0001/2030");
+
+    // 6) Corpo do relatório (a partir do item 5) e PDF
+    await page.getByRole("link", { name: "Gerar relatório" }).click();
+    await expect(page.getByTestId("cabecalho-relatorio")).toHaveText(
+      new RegExp(`^Protocolo nº 212345/2030 \\| Inspeção ${codigo} \\| Ref\\. interna \\d{4}/2026 \\| Relatório SEMA nº RT-0001/2030$`));
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText(["5 – Constatações", "6 – Providências tomadas", "7 – Conclusão"]);
+    await expect(page.getByTestId("atos-relatorio")).toContainText("Notificação – nº NOT-0001/2030");
+    await expect(page.getByTestId("relatorio")).toContainText("Notificado o responsável para apresentar a documentação em 10 dias.");
+    for (const fora of ["Fazenda Modelo Fictícia", "Analista Modelo", "Ministério Público", "Assinatura"]) {
+      await expect(page.getByTestId("relatorio")).not.toContainText(fora); // capa e assinatura ficam no sistema da SEMA
+    }
+    await page.getByLabel("Incluir conclusão").uncheck();
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText(["5 – Constatações", "6 – Providências tomadas"]);
+    await page.getByLabel("Incluir conclusão").check();
+    await expect(page.getByRole("heading", { name: "7 – Conclusão" })).toBeVisible();
+    await tela(page, "relatorio-corpo-a-partir-do-item-5");
+    await page.emulateMedia({ media: "print" });
+    const pdf = path.join(raiz, "docs", "evidencias", "relatorio-corpo-R4.pdf");
+    await page.pdf({ path: pdf, format: "A4", preferCSSPageSize: true, printBackground: true });
+    expect(readFileSync(pdf).length).toBeGreaterThan(5_000);
+    await page.emulateMedia({ media: "screen" });
+    // o mesmo corpo vem da API sem a conclusão quando a opção está desligada
+    const lista = (await (await request.get(`${API}/inspecoes?tamanho=100`)).json()).dados;
+    const id = lista.find((i: { codigo: string }) => i.codigo === codigo).id;
+    expect((await (await request.get(`${API}/inspecoes/${id}/relatorio?incluir_conclusao=false`)).json()).conclusao).toBeNull();
   });
 });

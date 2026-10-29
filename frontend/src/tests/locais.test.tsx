@@ -81,7 +81,7 @@ describe("Cadastrar local", () => {
     await userEvent.click(screen.getByRole("button", { name: "Cadastrar local" }));
     await waitFor(() => expect(chamadas.find((c) => c.metodo === "POST")).toBeTruthy());
     expect(chamadas.find((c) => c.metodo === "POST")!.corpo).toEqual({
-      nome: "Fazenda Nova Fictícia", municipio: "Cidade Fictícia", tipo: "Propriedade rural", latitude: -12.5, longitude: -55.5,
+      nome: "Fazenda Nova Fictícia", municipio: "Cidade Fictícia", tipo: "Propriedade rural", latitude: -12.5, longitude: -55.5, uf: "MT",
       numero_car: "mt-5107925-abc",
       proprietarios: [{ nome: "Fulano Fictício", telefone: "(65) 90000-0001" }, { nome: "Beltrana Fictícia", telefone: null }],
     });

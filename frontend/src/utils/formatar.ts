@@ -22,6 +22,38 @@ export function formatarTelefone(valor: string | null | undefined): string {
   return `(${d.slice(0, 2)}) ${d.slice(2, 2 + cabeca)}-${d.slice(2 + cabeca)}`;
 }
 
+/** Máscara progressiva: 11 dígitos = CPF (000.000.000-00); mais que isso = CNPJ (00.000.000/0000-00). */
+export function mascararCpfCnpj(valor: string): string {
+  const d = valor.replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 11) {
+    return d.replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1-$2");
+  }
+  return d.replace(/^(\d{2})(\d)/, "$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1/$2").replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+/** Máscara progressiva do CEP: 00.000-000. */
+export function mascararCep(valor: string): string {
+  const d = valor.replace(/\D/g, "").slice(0, 8);
+  return d.replace(/^(\d{2})(\d)/, "$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2-$3");
+}
+
+/**
+ * Máscara progressiva de coordenada em graus, minutos e segundos: `11° 46' 34" S` (latitude) ou `59° 05' 12" W`
+ * (longitude, graus com 3 dígitos). Só formata a digitação; minutos e segundos < 60 são conferidos pela API.
+ */
+export function mascararGms(texto: string, eixo: "latitude" | "longitude"): string {
+  const nGraus = eixo === "latitude" ? 2 : 3;
+  const letras = eixo === "latitude" ? "NS" : "EWO";
+  const d = texto.replace(/\D/g, "").slice(0, nGraus + 4);
+  const letra = [...texto.toUpperCase()].reverse().find((c) => letras.includes(c));
+  const graus = d.slice(0, nGraus), min = d.slice(nGraus, nGraus + 2), seg = d.slice(nGraus + 2);
+  let saida = graus;
+  if (min) saida += `° ${min}`;
+  if (seg) saida += `' ${seg}`;
+  if (letra) saida += `${seg.length === 2 ? '"' : ""} ${letra === "O" ? "W" : letra}`;
+  return saida;
+}
+
 /** Só informativo: UF-código IBGE-código (padrão SICAR). Outros formatos continuam aceitos. */
 export const segueModeloSicar = (car: string) => /^[A-Za-z]{2}-\d{7}-[A-Za-z0-9]+$/.test(car.trim());
 

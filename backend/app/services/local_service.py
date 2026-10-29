@@ -14,7 +14,7 @@ from app.domain.contato import (
     normalizar_car,
     normalizar_telefone,
 )
-from app.domain.coordenadas import validar_coordenadas
+from app.domain.coordenadas import gms_para_decimal, validar_coordenadas
 from app.domain.documento import normalizar_cep, normalizar_cpf_cnpj, normalizar_uf
 from app.domain.texto import sanear
 from app.errors import ErroNegocio, erro_campo
@@ -79,11 +79,25 @@ def _validar_proprietarios(dados: LocalIn, endereco: dict) -> list[dict]:
     return saida
 
 
+def _coordenada(decimal: float | None, gms: str | None, eixo: str, detalhes: list[dict]) -> float | None:
+    """Aceita decimal ou GMS; havendo os dois, o GMS vale (a tela envia só o modo escolhido)."""
+    if gms is not None and gms.strip():
+        return _tentar(detalhes, gms_para_decimal, gms, eixo, f"{eixo}_gms")
+    if decimal is None:
+        detalhes.append({"campo": eixo, "mensagem": "Campo obrigatório."})
+    return decimal
+
+
 def _validar(db: Session, dados: LocalIn, ignorar_id: int | None = None) -> dict:
     nome = sanear(dados.nome, "nome", MAX_NOME_LOCAL, obrigatorio=True)
     municipio = sanear(dados.municipio, "municipio", MAX_MUNICIPIO, obrigatorio=True)
     tipo = sanear(dados.tipo, "tipo", MAX_TIPO_LOCAL, obrigatorio=True)
-    validar_coordenadas(dados.latitude, dados.longitude)
+    erros_coordenada: list[dict] = []
+    latitude = _coordenada(dados.latitude, dados.latitude_gms, "latitude", erros_coordenada)
+    longitude = _coordenada(dados.longitude, dados.longitude_gms, "longitude", erros_coordenada)
+    if erros_coordenada:
+        raise ErroNegocio("VALIDACAO_CAMPO", "Dados inválidos.", 422, erros_coordenada)
+    validar_coordenadas(latitude, longitude)
     numero_car = normalizar_car(dados.numero_car)
     erros_endereco: list[dict] = []
     logradouro = _tentar(erros_endereco, sanear, dados.logradouro, "logradouro", MAX_LOGRADOURO)
@@ -97,7 +111,7 @@ def _validar(db: Session, dados: LocalIn, ignorar_id: int | None = None) -> dict
     if existente and existente.id != ignorar_id:
         raise erro_campo("nome", "Já existe um local com este nome.")
     return dict(
-        nome=nome, municipio=municipio, tipo=tipo, latitude=dados.latitude, longitude=dados.longitude,
+        nome=nome, municipio=municipio, tipo=tipo, latitude=latitude, longitude=longitude,
         ativo=dados.ativo, numero_car=numero_car, logradouro=logradouro, uf=uf, cep=cep,
         proprietarios=proprietarios,
     )

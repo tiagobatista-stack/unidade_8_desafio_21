@@ -195,7 +195,7 @@ describe("Nova inspeção: novo local", () => {
     await preencherLocal({ "Nome do local": "Fazenda Nova", "Município do local": "Sinop", "Tipo do local": "Propriedade rural", "Latitude do local": "-11,85", "Longitude do local": "-55.5" });
     await userEvent.click(within(dialogo).getByRole("button", { name: "Salvar local" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(chamadas.find((c) => c.metodo === "POST")!.corpo).toEqual({ nome: "Fazenda Nova", municipio: "Sinop", tipo: "Propriedade rural", latitude: -11.85, longitude: -55.5, numero_car: null, proprietarios: [] }); // vírgula decimal aceita; CAR e proprietários vazios
+    expect(chamadas.find((c) => c.metodo === "POST")!.corpo).toEqual({ nome: "Fazenda Nova", municipio: "Sinop", tipo: "Propriedade rural", latitude: -11.85, longitude: -55.5, uf: "MT", numero_car: null, proprietarios: [] }); // vírgula decimal aceita; CAR e proprietários vazios
     expect(screen.getByLabelText("Local")).toHaveValue("7"); // já selecionado
     expect(screen.getByLabelText("Latitude")).toHaveValue("-11.85");
     expect(screen.getByRole("option", { name: "Fazenda Nova — Sinop" })).toBeInTheDocument();

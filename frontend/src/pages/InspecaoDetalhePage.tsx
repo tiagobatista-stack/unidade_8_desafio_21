@@ -64,9 +64,12 @@ export default function InspecaoDetalhePage() {
 
       <dl className="dados">
         {insp.numero_relatorio && (
-          <div><dt>Relatório de vistoria</dt><dd data-testid="numero-relatorio">nº {insp.numero_relatorio}</dd></div>
+          <div><dt>Ref. interna (relatório)</dt><dd data-testid="numero-relatorio">nº {insp.numero_relatorio}</dd></div>
         )}
-        <div><dt>Processo</dt><dd data-testid="numero-processo">{insp.numero_processo ?? "—"}</dd></div>
+        {insp.numero_relatorio_sema && (
+          <div><dt>Relatório SEMA</dt><dd data-testid="numero-relatorio-sema">nº {insp.numero_relatorio_sema}</dd></div>
+        )}
+        <div><dt>Protocolo nº</dt><dd data-testid="numero-processo">{insp.numero_processo ?? "—"}</dd></div>
         <div><dt>Data de agendamento (planejada)</dt><dd>{formatarData(insp.data_agendamento)}</dd></div>
         <div><dt>Data de realização (vistoria em campo)</dt><dd>{formatarData(insp.data_realizacao)}</dd></div>
         <div><dt>Resultado</dt><dd>{rotuloResultado(insp.resultado)}</dd></div>
@@ -112,9 +115,12 @@ export default function InspecaoDetalhePage() {
 
       <div className="acoes">
         {/* O relatório existe em qualquer status: prévia antes do fechamento, documento numerado depois */}
+        <Link className="botao secundario" to={`/inspecoes/${id}/capa`}>Dados para capa e lavratura</Link>
         <Link className="botao secundario" to={`/inspecoes/${id}/relatorio`}>Gerar relatório</Link>
-        {!leitura && insp.campos_editaveis.length > 0 && (
-          <Link className="botao secundario" to={`/inspecoes/${id}/editar`}>Editar inspeção</Link>
+        {insp.campos_editaveis.length > 0 && (
+          <Link className="botao secundario" to={`/inspecoes/${id}/editar`}>
+            {insp.status === "FINALIZADA" ? "Registrar números da SEMA" : "Editar inspeção"}
+          </Link>
         )}
         {!leitura && (
           <>
